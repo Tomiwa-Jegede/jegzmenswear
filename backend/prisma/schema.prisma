@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  heroImageUrl String?
+  altText     String?
+  isActive    Boolean  @default(true)
+  position    Int      @default(0)
+  desktopCropMode  String   @default("auto")
+  desktopCropX     Float    @default(0)
+  desktopCropY     Float    @default(0)
+  desktopCropWidth Float    @default(100)
+  desktopCropHeight Float   @default(100)
+  desktopZoom      Float    @default(1)
+  mobileCropMode   String   @default("auto")
+  mobileCropX      Float    @default(0)
+  mobileCropY      Float    @default(0)
+  mobileCropWidth  Float    @default(100)
+  mobileCropHeight Float    @default(100)
+  mobileZoom       Float    @default(1)
+  products    Product[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  price        Decimal  @db.Decimal(10, 2)
+  isFeatured   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id])
+  images       ProductImage[]
+  variants     ProductVariant[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size      String
+  color     String?
+  sku       String   @unique
+  stock     Int      @default(0)
+  cartItems CartItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  sessionId String     @unique
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String         @id @default(cuid())
+  cartId    String
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  quantity  Int            @default(1)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([cartId, variantId])
+}
+
+model ProductImage {
+  id               String   @id @default(cuid())
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url              String
+  altText          String?
+  position         Int      @default(0)
+  isPlaceholder    Boolean  @default(true)
+  desktopCropMode  String   @default("auto")
+  desktopCropX     Float    @default(0)
+  desktopCropY     Float    @default(0)
+  desktopCropWidth  Float   @default(100)
+  desktopCropHeight Float   @default(100)
+  desktopZoom      Float    @default(1)
+  mobileCropMode   String   @default("auto")
+  mobileCropX      Float    @default(0)
+  mobileCropY      Float    @default(0)
+  mobileCropWidth  Float    @default(100)
+  mobileCropHeight Float    @default(100)
+  mobileZoom       Float    @default(1)
+  createdAt        DateTime @default(now())
+}
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CampaignImage {
+  id               String   @id @default(cuid())
+  url              String
+  altText          String?
+  position         Int      @default(0)
+  isActive         Boolean  @default(true)
+  desktopCropMode  String   @default("auto")
+  desktopCropX     Float    @default(0)
+  desktopCropY     Float    @default(0)
+  desktopCropWidth Float    @default(100)
+  desktopCropHeight Float   @default(100)
+  desktopZoom      Float    @default(1)
+  mobileCropMode   String   @default("auto")
+  mobileCropX      Float    @default(0)
+  mobileCropY      Float    @default(0)
+  mobileCropWidth  Float    @default(100)
+  mobileCropHeight Float    @default(100)
+  mobileZoom       Float    @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model HeroImage {
+  id               String   @id @default(cuid())
+  url              String
+  altText          String?
+  position         Int      @default(0)
+  isActive         Boolean  @default(true)
+  desktopCropMode  String   @default("auto")
+  desktopCropX     Float    @default(0)
+  desktopCropY     Float    @default(0)
+  desktopCropWidth Float    @default(100)
+  desktopCropHeight Float   @default(100)
+  desktopZoom      Float    @default(1)
+  mobileCropMode   String   @default("auto")
+  mobileCropX      Float    @default(0)
+  mobileCropY      Float    @default(0)
+  mobileCropWidth  Float    @default(100)
+  mobileCropHeight Float    @default(100)
+  mobileZoom       Float    @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

@@ -1,0 +1,77 @@
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import api from "../lib/axios";
+
+const CartContext = createContext(null);
+
+export function CartProvider({ children }) {
+  const [cart, setCart] = useState({ items: [] });
+  const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const refreshCart = useCallback(async () => {
+    try {
+      const res = await api.get("/cart");
+      setCart(res.data);
+    } catch (err) {
+      console.error("Failed to load cart", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshCart();
+  }, [refreshCart]);
+
+  const addToCart = async (variantId, quantity = 1) => {
+    const res = await api.post("/cart/items", { variantId, quantity });
+    setCart(res.data);
+    setIsOpen(true);
+  };
+
+  const updateQuantity = async (itemId, quantity) => {
+    const res = await api.put(`/cart/items/${itemId}`, { quantity });
+    setCart(res.data);
+  };
+
+  const removeItem = async (itemId) => {
+    const res = await api.delete(`/cart/items/${itemId}`);
+    setCart(res.data);
+  };
+
+  const itemCount = cart.items.reduce((sum, i) => sum + i.quantity, 0);
+  const subtotal = cart.items.reduce(
+    (sum, i) => sum + Number(i.variant.product.price) * i.quantity,
+    0,
+  );
+
+  return (
+    <CartContext.Provider
+      value={{
+        cart,
+        loading,
+        isOpen,
+        setIsOpen,
+        addToCart,
+        updateQuantity,
+        removeItem,
+        itemCount,
+        subtotal,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export function useCart() {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used within CartProvider");
+  return ctx;
+}

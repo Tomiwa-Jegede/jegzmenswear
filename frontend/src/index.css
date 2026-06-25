@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+@theme {
+  --color-offwhite: #F8F7F4;
+  --color-cream: #EFE9DF;
+  --color-ink: #111111;
+  --color-charcoal: #2A2A2A;
+  --color-burgundy: #6A1F2B;
+  --color-crimson: #8C2D3C;
+}

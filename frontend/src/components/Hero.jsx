@@ -1,0 +1,337 @@
+import { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
+import {
+  motion,
+  AnimatePresence,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
+import api from "../lib/axios";
+import { IconArrowLeft } from "./icons";
+import FadeImage from "./FadeImage";
+
+const ROTATE_INTERVAL = 2000; // ms between campaign images — not scroll-linked
+
+function Hero() {
+  const [heroImages, setHeroImages] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [direction, setDirection] = useState(1);
+  const touchStartXRef = useRef(null);
+  const reduceMotion = useReducedMotion();
+  const heroRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroParallaxY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    reduceMotion ? ["0%", "0%"] : ["0%", "18%"],
+  );
+  const editorialParallaxY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    reduceMotion ? ["0%", "0%"] : ["0%", "8%"],
+  );
+
+  useEffect(() => {
+    api
+      .get("/hero-images")
+      .then((res) => setHeroImages(res.data))
+      .catch(console.error);
+  }, []);
+
+  const validImages = heroImages.filter((img) => img?.url);
+
+  // Simple timer-based slide rotation, pauses on hover/touch-hold.
+  useEffect(() => {
+    if (reduceMotion || validImages.length < 2 || paused) return;
+    const id = setInterval(() => {
+      goNext();
+    }, ROTATE_INTERVAL);
+    return () => clearInterval(id);
+  }, [reduceMotion, validImages.length, paused]);
+
+  function goNext() {
+    setDirection(1);
+    setActiveIndex((i) => (i + 1) % validImages.length);
+  }
+
+  function goPrev() {
+    setDirection(-1);
+    setActiveIndex((i) => (i - 1 + validImages.length) % validImages.length);
+  }
+
+  const currentImage = validImages[activeIndex];
+
+  // Reproduce the admin-selected crop box as a scale+translate transform.
+  // Pass the relevant breakpoint's crop fields (desktop* or mobile*).
+  function getCropTransform({
+    cropX = 0,
+    cropY = 0,
+    cropWidth = 100,
+    cropHeight = 100,
+  } = {}) {
+    const scaleX = 100 / cropWidth;
+    const scaleY = 100 / cropHeight;
+    const translateXPercent = -cropX * scaleX;
+    const translateYPercent = -cropY * scaleY;
+
+    return {
+      transformOrigin: "top left",
+      transform: `translate(${translateXPercent}%, ${translateYPercent}%) scale(${scaleX}, ${scaleY})`,
+    };
+  }
+
+  function getDesktopCropTransform(img) {
+    return getCropTransform({
+      cropX: img?.desktopCropX,
+      cropY: img?.desktopCropY,
+      cropWidth: img?.desktopCropWidth,
+      cropHeight: img?.desktopCropHeight,
+    });
+  }
+
+  function getMobileCropTransform(img) {
+    return getCropTransform({
+      cropX: img?.mobileCropX,
+      cropY: img?.mobileCropY,
+      cropWidth: img?.mobileCropWidth,
+      cropHeight: img?.mobileCropHeight,
+    });
+  }
+
+  const Dots = validImages.length > 1 && (
+    <div className="flex items-center gap-2">
+      {validImages.map((img, i) => (
+        <button
+          key={img.url}
+          type="button"
+          aria-label={`Show campaign image ${i + 1}`}
+          onClick={() => {
+            setDirection(i > activeIndex ? 1 : -1);
+            setActiveIndex(i);
+          }}
+          className={`h-1.5 w-1.5 rounded-full transition-colors cursor-pointer ${
+            i === activeIndex ? "bg-offwhite" : "bg-offwhite/40"
+          }`}
+        />
+      ))}
+    </div>
+  );
+
+  const NavButtons = validImages.length > 1 && (
+    <div className="flex items-center gap-4">
+      <button
+        type="button"
+        aria-label="Previous campaign image"
+        onClick={goPrev}
+        className="text-offwhite/70 hover:text-offwhite transition-colors cursor-pointer"
+      >
+        <IconArrowLeft className="h-4 w-4" />
+      </button>
+      {Dots}
+      <button
+        type="button"
+        aria-label="Next campaign image"
+        onClick={goNext}
+        className="text-offwhite/70 hover:text-offwhite transition-colors cursor-pointer"
+      >
+        <IconArrowLeft className="h-4 w-4 rotate-180" />
+      </button>
+    </div>
+  );
+
+  const slideVariants = {
+    enter: (dir) => ({ x: dir > 0 ? "100%" : "-100%" }),
+    center: { x: "0%" },
+    exit: (dir) => ({ x: dir > 0 ? "-100%" : "100%" }),
+  };
+
+  const slideTransition = {
+    duration: reduceMotion ? 0 : 0.7,
+    ease: "easeInOut",
+  };
+
+  const DesktopCampaignImage = (
+    <>
+      <div className="absolute inset-0 bg-ink/10" />
+      {currentImage && (
+        <AnimatePresence mode="sync" initial={false} custom={direction}>
+          <motion.div
+            key={currentImage.url}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={slideTransition}
+            className="absolute inset-0 h-full w-full overflow-hidden"
+          >
+            <FadeImage
+              src={currentImage.url}
+              alt={currentImage.alt || "Onfleek campaign portrait"}
+              loading="eager"
+              className="absolute inset-0 h-full w-full"
+              style={getDesktopCropTransform(currentImage)}
+            />
+          </motion.div>
+        </AnimatePresence>
+      )}
+    </>
+  );
+
+  const MobileCampaignImage = currentImage ? (
+    <AnimatePresence mode="sync" initial={false} custom={direction}>
+      <motion.div
+        key={currentImage.url}
+        custom={direction}
+        variants={slideVariants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={slideTransition}
+        className="absolute inset-0 h-full w-full overflow-hidden"
+      >
+        <FadeImage
+          src={currentImage.url}
+          alt={currentImage.alt || "Onfleek campaign portrait"}
+          loading="eager"
+          className="absolute inset-0 h-full w-full"
+          style={getMobileCropTransform(currentImage)}
+        />
+      </motion.div>
+    </AnimatePresence>
+  ) : (
+    <div className="absolute inset-0 animate-pulse bg-ink/10" />
+  );
+
+  return (
+    <>
+      <section
+        ref={heroRef}
+        data-hero
+        className="relative h-screen w-full overflow-hidden bg-offwhite sm:h-screen"
+      >
+        {/* ===================== MOBILE — full-bleed image, nav overlays ===================== */}
+        <motion.div
+          className="absolute inset-0 sm:hidden"
+          style={{ y: heroParallaxY }}
+          onTouchStart={(e) => {
+            setPaused(true);
+            touchStartXRef.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            setPaused(false);
+            const startX = touchStartXRef.current;
+            touchStartXRef.current = null;
+            if (startX == null || validImages.length < 2) return;
+            const endX = e.changedTouches[0].clientX;
+            const delta = endX - startX;
+            const SWIPE_THRESHOLD = 40;
+            if (delta > SWIPE_THRESHOLD) goPrev();
+            else if (delta < -SWIPE_THRESHOLD) goNext();
+          }}
+          onTouchCancel={() => {
+            setPaused(false);
+            touchStartXRef.current = null;
+          }}
+        >
+          {MobileCampaignImage}
+          <div className="absolute inset-0 bg-ink/35" />
+
+          {Dots && (
+            <div
+              className="absolute inset-x-0 z-[3] flex items-center justify-center gap-2"
+              style={{
+                bottom: "calc(max(22%, env(safe-area-inset-bottom) + 6.5rem))",
+              }}
+            >
+              {Dots}
+            </div>
+          )}
+
+          <div
+            className="absolute inset-x-0 z-[3] flex items-center justify-center"
+            style={{
+              bottom: "calc(max(10%, env(safe-area-inset-bottom) + 3rem))",
+            }}
+          >
+            <Link
+              to="/shop"
+              className="bg-transparent text-offwhite [text-shadow:0_1px_3px_rgba(0,0,0,0.5)] px-10 py-4  text-sm uppercase tracking-[0.2em] hover:bg-burgundy hover:text-offwhite transition-colors cursor-pointer border border-offwhite rounded-sm"
+            >
+              Shop
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* ===================== DESKTOP — asymmetric editorial split ===================== */}
+        <div className="hidden h-full w-full sm:flex">
+          {/* Photography — dominant, anchored, no dead margins */}
+          <motion.div
+            className="relative h-full w-[62%] overflow-hidden"
+            style={{ y: heroParallaxY }}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+          >
+            {DesktopCampaignImage}
+            <div className="absolute inset-0 bg-ink/15" />
+
+            {NavButtons && (
+              <div className="absolute bottom-10 right-10 z-[3]">
+                {NavButtons}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Action column — quiet, curated, upper-third weighted */}
+          <div className="relative flex w-[38%] flex-col items-start gap-10 px-16 pt-[28vh]">
+            <p className="text-xs uppercase tracking-[0.3em] text-burgundy">
+              Onfleek Worldwide
+            </p>
+
+            <Link
+              to="/shop"
+              className="group relative inline-flex w-full max-w-[260px] items-center justify-between overflow-hidden border border-ink px-8 py-5 text-sm uppercase tracking-[0.25em] text-ink"
+            >
+              <span className="relative z-10 transition-colors duration-500 group-hover:text-offwhite">
+                Shop
+              </span>
+              <span className="relative z-10 transition-colors duration-500 group-hover:text-offwhite">
+                &rarr;
+              </span>
+              <span className="absolute inset-0 -translate-x-full bg-ink transition-transform duration-500 ease-out group-hover:translate-x-0" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Editorial copy — follows the hero, unchanged */}
+      <section className="relative bg-offwhite px-6 sm:px-10 lg:px-16 py-24 lg:py-32">
+        <motion.div
+          className="max-w-xl lg:max-w-2xl lg:mx-auto lg:text-center"
+          style={{ y: editorialParallaxY }}
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-burgundy mb-6">
+            Onfleek Worldwide
+          </p>
+          <h1 className="font-serif text-5xl sm:text-6xl text-ink leading-[1.05] mb-6">
+            Young Legacy.
+            <br />
+            Modern Heritage.
+          </h1>
+          <p className="text-base text-ink/70 leading-relaxed max-w-md lg:mx-auto">
+            Built for the generation that dresses with intention, carries
+            ambition with grace, and walks into every room as though they belong
+            there.
+          </p>
+        </motion.div>
+      </section>
+    </>
+  );
+}
+
+export default Hero;
