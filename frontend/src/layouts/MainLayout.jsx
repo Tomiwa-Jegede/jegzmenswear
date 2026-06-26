@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import PageLoader from "../components/PageLoader";
 import ScrollToTop from "../components/ScrollToTop";
+import Hero from "../components/Hero";
+import api from "../lib/axios";
 import Footer from "../components/Footer";
 import CartDrawer from "../components/CartDrawer";
 import MobileNav from "../components/MobileNav";
@@ -17,6 +19,7 @@ import {
   IconLogOut,
   IconBag,
 } from "../components/icons";
+import { IconInstagram, IconTikTok, IconPinterest } from "../components/Footer";
 function MainLayout() {
   const { itemCount, setIsOpen } = useCart();
   const { isAuthenticated, logout } = useAdminAuth();
@@ -93,6 +96,14 @@ function MainLayout() {
     };
   }, [location.pathname]);
   const [scrolled, setScrolled] = useState(!isHome);
+  const [maintenance, setMaintenance] = useState(null);
+
+  useEffect(() => {
+    api
+      .get("/site-content")
+      .then((res) => setMaintenance(res.data.maintenance_mode === "true"))
+      .catch(() => setMaintenance(false));
+  }, []);
 
   useEffect(() => {
     if (!isHome) {
@@ -135,8 +146,18 @@ function MainLayout() {
       window.removeEventListener("orientationchange", setNavHeightVar);
     };
   }, []);
+  if (maintenance === null) {
+    return (
+      <div className="bg-offwhite min-h-screen">
+        <PageLoader visible={true} />
+      </div>
+    );
+  }
+
+  const showMaintenance = maintenance && !isAuthenticated && !location.pathname.startsWith("/admin");
+
   return (
-    <div className="min-h-screen bg-offwhite flex flex-col">
+    <div className={`bg-offwhite flex flex-col ${showMaintenance ? "h-screen overflow-hidden" : "min-h-screen"}`}>
       <ScrollToTop />
       <PageLoader visible={loaderVisible} />
       <style>{`
@@ -219,6 +240,7 @@ function MainLayout() {
           </div>
         </div>
 
+        {!showMaintenance && (
         <button
           onClick={() => setIsMobileMenuOpen(true)}
           aria-label="Open menu"
@@ -242,6 +264,7 @@ function MainLayout() {
             <line x1="3" y1="16" x2="19" y2="16" />
           </svg>
         </button>
+        )}
 
         <div className="sm:hidden flex items-center gap-3">
           <Link
@@ -259,6 +282,7 @@ function MainLayout() {
               <IconLogIn className="h-5 w-5" />
             )}
           </Link>
+          {!showMaintenance && (
           <button
             onClick={() => setIsOpen(true)}
             aria-label="Bag"
@@ -275,23 +299,24 @@ function MainLayout() {
               </span>
             )}
           </button>
+          )}
         </div>
 
     <div className="hidden sm:flex items-center gap-6">
-          <Link
+          {!showMaintenance && <Link
             to="/"
             className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
           >
             <IconHome className="h-3.5 w-3.5" />
             Home
-          </Link>
-          <Link
+          </Link>}
+          {!showMaintenance && <Link
             to="/shop"
             className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
           >
             <IconTag className="h-3.5 w-3.5" />
             Shop
-          </Link>
+          </Link>}
           {isAuthenticated ? (
             <Link
               to="/admin"
@@ -309,13 +334,13 @@ function MainLayout() {
               Login
             </Link>
           )}
-          <button
+          {!showMaintenance && <button
             onClick={() => setIsOpen(true)}
             className="flex items-center gap-1.5 text-sm uppercase tracking-[0.2em] text-ink/70 hover:text-ink transition-colors cursor-pointer"
           >
             <IconBag className="h-4 w-4" />
             Bag {itemCount > 0 && `(${itemCount})`}
-          </button>
+          </button>}
           {isAuthenticated && (
             <button
               onClick={logout}
@@ -335,13 +360,36 @@ function MainLayout() {
         onOpenCart={() => setIsOpen(true)}
         onLogout={logout}
       />
-      <main
-        className="flex-1"
-        style={{ paddingTop: isHome ? 0 : "var(--nav-height, 89px)" }}
-      >
-        <Outlet />
-      </main>
-      <Footer />
+      {showMaintenance ? (
+        <>
+          <main className="flex-1 overflow-hidden h-screen">
+            <Hero maintenanceMode />
+          </main>
+          <footer className="border-t border-ink/10 bg-offwhite px-6 py-8">
+            <div className="flex justify-center gap-6 items-center">
+              <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] text-ink/40 cursor-default">
+                <IconInstagram className="h-4 w-4" /> Instagram
+              </span>
+              <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] text-ink/40 cursor-default">
+                <IconTikTok className="h-4 w-4" /> TikTok
+              </span>
+              <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] text-ink/40 cursor-default">
+                <IconPinterest className="h-4 w-4" /> Pinterest
+              </span>
+            </div>
+          </footer>
+        </>
+      ) : (
+        <>
+          <main
+            className="flex-1"
+            style={{ paddingTop: isHome ? 0 : "var(--nav-height, 89px)" }}
+          >
+            <Outlet />
+          </main>
+          <Footer />
+        </>
+      )}
       <CartDrawer />
     </div>
   );

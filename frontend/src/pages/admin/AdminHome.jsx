@@ -1,10 +1,52 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import api from "../../lib/axios";
+import { useToast } from "../../context/ToastContext";
 
 function AdminHome() {
+  const { showToast } = useToast();
+  const [maintenance, setMaintenance] = useState(false);
+  const [toggling, setToggling] = useState(false);
+
+  useEffect(() => {
+    api
+      .get("/site-content")
+      .then((res) => setMaintenance(res.data.maintenance_mode === "true"))
+      .catch(console.error);
+  }, []);
+
+  async function toggleMaintenance() {
+    setToggling(true);
+    try {
+      const next = !maintenance;
+      await api.put("/site-content", { maintenance_mode: String(next) });
+      setMaintenance(next);
+      showToast(next ? "Maintenance mode is now ON." : "Maintenance mode is now OFF.", "success");
+    } catch (err) {
+      showToast("Could not update maintenance mode. Please try again.");
+    } finally {
+      setToggling(false);
+    }
+  }
+
   return (
     <div className="px-6 py-12 max-w-2xl">
-      <div className="mb-10">
+      <div className="mb-10 flex items-center justify-between">
         <h1 className="font-serif text-3xl text-ink">Admin</h1>
+        <button
+          onClick={toggleMaintenance}
+          disabled={toggling}
+          className={`flex items-center gap-3 px-5 py-2.5 text-xs uppercase tracking-[0.15em] border transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed ${
+            maintenance
+              ? "bg-ink text-offwhite border-ink"
+              : "bg-offwhite text-ink/60 border-ink/20 hover:border-ink hover:text-ink"
+          }`}
+        >
+          <span className={`w-8 h-4 rounded-full relative transition-colors ${maintenance ? "bg-offwhite/30" : "bg-ink/10"}`}>
+            <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${maintenance ? "bg-offwhite left-4" : "bg-ink/40 left-0.5"}`} />
+          </span>
+          {toggling ? "Updating..." : maintenance ? "Maintenance: On" : "Maintenance: Off"}
+        </button>
       </div>
       <ul className="space-y-4">
         <li>

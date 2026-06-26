@@ -13,7 +13,7 @@ import FadeImage from "./FadeImage";
 
 const ROTATE_INTERVAL = 2000; // ms between campaign images — not scroll-linked
 
-function Hero() {
+function Hero({ maintenanceMode = false }) {
   const [heroImages, setHeroImages] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -230,19 +230,21 @@ function Hero() {
             </div>
           )}
 
-          <div
-            className="absolute inset-x-0 z-[3] flex items-center justify-center"
-            style={{
-              bottom: "calc(max(10%, env(safe-area-inset-bottom) + 3rem))",
-            }}
-          >
-            <Link
-              to="/shop"
-              className="bg-transparent text-offwhite [text-shadow:0_1px_3px_rgba(0,0,0,0.5)] px-10 py-4  text-sm uppercase tracking-[0.2em] hover:bg-burgundy hover:text-offwhite transition-colors cursor-pointer border border-offwhite rounded-sm"
+          {!maintenanceMode && (
+            <div
+              className="absolute inset-x-0 z-[3] flex items-center justify-center"
+              style={{
+                bottom: "calc(max(10%, env(safe-area-inset-bottom) + 3rem))",
+              }}
             >
-              Shop
-            </Link>
-          </div>
+              <Link
+                to="/shop"
+                className="bg-transparent text-offwhite [text-shadow:0_1px_3px_rgba(0,0,0,0.5)] px-10 py-4  text-sm uppercase tracking-[0.2em] hover:bg-burgundy hover:text-offwhite transition-colors cursor-pointer border border-offwhite rounded-sm"
+              >
+                Shop
+              </Link>
+            </div>
+          )}
         </motion.div>
 
         {/* ===================== DESKTOP — asymmetric editorial split ===================== */}
@@ -266,22 +268,25 @@ function Hero() {
 
           {/* Action column — quiet, curated, upper-third weighted */}
           <div data-hero-action className="relative flex w-[38%] flex-col items-start gap-10 px-16 pt-[calc(var(--nav-height,89px)+4rem)]">
-            <p className="text-xs uppercase tracking-[0.3em] text-burgundy">
-              Onfleek Worldwide
-            </p>
-
-            <Link
-              to="/shop"
-              className="group relative inline-flex w-full max-w-[260px] items-center justify-between overflow-hidden border border-ink px-8 py-5 text-sm uppercase tracking-[0.25em] text-ink"
-            >
-              <span className="relative z-10 transition-colors duration-500 group-hover:text-offwhite">
-                Shop
-              </span>
-              <span className="relative z-10 transition-colors duration-500 group-hover:text-offwhite">
-                &rarr;
-              </span>
-              <span className="absolute inset-0 -translate-x-full bg-ink transition-transform duration-500 ease-out group-hover:translate-x-0" />
-            </Link>
+            {!maintenanceMode && (
+              <>
+                <p className="text-xs uppercase tracking-[0.3em] text-burgundy">
+                  Onfleek Worldwide
+                </p>
+                <Link
+                  to="/shop"
+                  className="group relative inline-flex w-full max-w-[260px] items-center justify-between overflow-hidden border border-ink px-8 py-5 text-sm uppercase tracking-[0.25em] text-ink"
+                >
+                  <span className="relative z-10 transition-colors duration-500 group-hover:text-offwhite">
+                    Shop
+                  </span>
+                  <span className="relative z-10 transition-colors duration-500 group-hover:text-offwhite">
+                    &rarr;
+                  </span>
+                  <span className="absolute inset-0 -translate-x-full bg-ink transition-transform duration-500 ease-out group-hover:translate-x-0" />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
