@@ -1,9 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import Cropper from "react-easy-crop";
+import { useToast } from "../../context/ToastContext";
 import api from "../../lib/axios";
 import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import Skeleton from "../../components/ui/Skeleton";
+
+const FOCAL_OPTIONS = [
+  ["left top", "center top", "right top"],
+  ["left center", "center center", "right center"],
+  ["left bottom", "center bottom", "right bottom"],
+];
+
+function FocalPointPicker({ label, value, onChange }) {
+  const current = value || "center center";
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">{label}</p>
+      <div className="grid grid-cols-3 gap-1 w-28">
+        {FOCAL_OPTIONS.flat().map((v) => (
+          <button key={v} type="button" onClick={() => onChange(v)} title={v}
+            className={`h-8 w-8 border flex items-center justify-center transition-colors cursor-pointer ${current === v ? "border-ink bg-ink" : "border-ink/20 hover:border-ink"}`}>
+            <span className={`block w-2 h-2 rounded-full ${current === v ? "bg-offwhite" : "bg-ink/40"}`} />
+          </button>
+        ))}
+      </div>
+      <p className="text-[10px] text-ink/40 mt-1">{current}</p>
+    </div>
+  );
+}
 
 const emptyCollectionForm = {
   name: "",
@@ -19,7 +43,7 @@ function AdminCollections() {
   const [view, setView] = useState("list"); // "list" | "form"
   const [activeCollection, setActiveCollection] = useState(null);
   const [form, setForm] = useState(emptyCollectionForm);
-  const [error, setError] = useState("");
+  const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
 
   const [file, setFile] = useState(null);
@@ -27,25 +51,8 @@ function AdminCollections() {
   const [altText, setAltText] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const [desktopCropMode, setDesktopCropMode] = useState("auto");
-  const [desktopCrop, setDesktopCrop] = useState({ x: 0, y: 0 });
-  const [desktopZoom, setDesktopZoom] = useState(1);
-  const [desktopCroppedArea, setDesktopCroppedArea] = useState({
-    x: 0,
-    y: 0,
-    width: 100,
-    height: 100,
-  });
-
-  const [mobileCropMode, setMobileCropMode] = useState("auto");
-  const [mobileCrop, setMobileCrop] = useState({ x: 0, y: 0 });
-  const [mobileZoom, setMobileZoom] = useState(1);
-  const [mobileCroppedArea, setMobileCroppedArea] = useState({
-    x: 0,
-    y: 0,
-    width: 100,
-    height: 100,
-  });
+  const [desktopFocal, setDesktopFocal] = useState("center center");
+  const [mobileFocal, setMobileFocal] = useState("center center");
 
   function loadCollections() {
     api
@@ -79,21 +86,14 @@ function AdminCollections() {
     if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
     setFilePreviewUrl(null);
     setAltText("");
-    setDesktopCropMode("auto");
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(1);
-    setDesktopCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
-    setMobileCropMode("auto");
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(1);
-    setMobileCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
+    setDesktopFocal("center center");
+    setMobileFocal("center center");
   }
 
   function startCreate() {
     setActiveCollection(null);
     setForm(emptyCollectionForm);
     resetImageState();
-    setError("");
     setView("form");
   }
 
@@ -109,25 +109,8 @@ function AdminCollections() {
     if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
     setFilePreviewUrl(collection.heroImageUrl || null);
     setAltText(collection.altText || "");
-    setDesktopCropMode(collection.desktopCropMode || "auto");
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(collection.desktopZoom || 1);
-    setDesktopCroppedArea({
-      x: collection.desktopCropX ?? 0,
-      y: collection.desktopCropY ?? 0,
-      width: collection.desktopCropWidth ?? 100,
-      height: collection.desktopCropHeight ?? 100,
-    });
-    setMobileCropMode(collection.mobileCropMode || "auto");
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(collection.mobileZoom || 1);
-    setMobileCroppedArea({
-      x: collection.mobileCropX ?? 0,
-      y: collection.mobileCropY ?? 0,
-      width: collection.mobileCropWidth ?? 100,
-      height: collection.mobileCropHeight ?? 100,
-    });
-    setError("");
+    setDesktopFocal(collection.desktopCropMode && collection.desktopCropMode !== "auto" && collection.desktopCropMode !== "manual" ? collection.desktopCropMode : "center center");
+    setMobileFocal(collection.mobileCropMode && collection.mobileCropMode !== "auto" && collection.mobileCropMode !== "manual" ? collection.mobileCropMode : "center center");
     setView("form");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -137,24 +120,18 @@ function AdminCollections() {
     setActiveCollection(null);
     setForm(emptyCollectionForm);
     resetImageState();
-    setError("");
     loadCollections();
   }
 
   function handleFileChange(e) {
     const selected = e.target.files[0];
     setFile(selected);
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(1);
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(1);
     if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
     setFilePreviewUrl(selected ? URL.createObjectURL(selected) : null);
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError("");
     setSaving(true);
     setUploading(true);
     try {
@@ -163,18 +140,8 @@ function AdminCollections() {
         description: form.description,
         position: Number(form.position),
         altText,
-        desktopCropMode,
-        desktopCropX: desktopCroppedArea.x,
-        desktopCropY: desktopCroppedArea.y,
-        desktopCropWidth: desktopCroppedArea.width,
-        desktopCropHeight: desktopCroppedArea.height,
-        desktopZoom,
-        mobileCropMode,
-        mobileCropX: mobileCroppedArea.x,
-        mobileCropY: mobileCroppedArea.y,
-        mobileCropWidth: mobileCroppedArea.width,
-        mobileCropHeight: mobileCroppedArea.height,
-        mobileZoom,
+        desktopCropMode: desktopFocal,
+        mobileCropMode: mobileFocal,
       };
       if (file) {
         payload.heroImageUrl = await uploadImageToCloudinary(file);
@@ -187,7 +154,7 @@ function AdminCollections() {
       }
       backToList();
     } catch (err) {
-      setError(err.response?.data?.error || "Save failed");
+      showToast("Something went wrong. The collection could not be saved. Please try again.");
     } finally {
       setSaving(false);
       setUploading(false);
@@ -305,7 +272,7 @@ function AdminCollections() {
         onSubmit={handleSubmit}
         className="border border-ink/10 p-6 mb-10 space-y-4"
       >
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        
 
         <div>
           <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
@@ -359,120 +326,12 @@ function AdminCollections() {
 
         {filePreviewUrl && (
           <div className="space-y-6">
-            {/* Desktop crop */}
-            <div>
-              <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-                Desktop Crop
-              </label>
-              <div className="flex gap-3 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setDesktopCropMode("auto")}
-                  className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    desktopCropMode === "auto"
-                      ? "border-ink bg-ink text-offwhite"
-                      : "border-ink/20 text-ink/60 hover:border-ink"
-                  }`}
-                >
-                  Auto
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDesktopCropMode("manual")}
-                  className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    desktopCropMode === "manual"
-                      ? "border-ink bg-ink text-offwhite"
-                      : "border-ink/20 text-ink/60 hover:border-ink"
-                  }`}
-                >
-                  Manual
-                </button>
-              </div>
-              {desktopCropMode === "manual" && (
-                <>
-                  <div className="relative w-full max-w-xs aspect-square bg-ink/5 border border-ink/20">
-                    <Cropper
-                      image={filePreviewUrl}
-                      crop={desktopCrop}
-                      zoom={desktopZoom}
-                      aspect={1}
-                      onCropChange={setDesktopCrop}
-                      onZoomChange={setDesktopZoom}
-                      onCropComplete={(croppedAreaPercent) =>
-                        setDesktopCroppedArea(croppedAreaPercent)
-                      }
-                      showGrid
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={3}
-                    step={0.01}
-                    value={desktopZoom}
-                    onChange={(e) => setDesktopZoom(Number(e.target.value))}
-                    className="w-full max-w-xs mt-3"
-                  />
-                </>
-              )}
+            <div className="relative w-full max-w-xs aspect-[3/4] bg-ink/5 border border-ink/20 overflow-hidden">
+              <img src={filePreviewUrl} alt="Preview" className="w-full h-full object-cover" style={{ objectPosition: desktopFocal }} />
             </div>
-
-            {/* Mobile crop */}
-            <div>
-              <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-                Mobile Crop
-              </label>
-              <div className="flex gap-3 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setMobileCropMode("auto")}
-                  className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    mobileCropMode === "auto"
-                      ? "border-ink bg-ink text-offwhite"
-                      : "border-ink/20 text-ink/60 hover:border-ink"
-                  }`}
-                >
-                  Auto
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMobileCropMode("manual")}
-                  className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    mobileCropMode === "manual"
-                      ? "border-ink bg-ink text-offwhite"
-                      : "border-ink/20 text-ink/60 hover:border-ink"
-                  }`}
-                >
-                  Manual
-                </button>
-              </div>
-              {mobileCropMode === "manual" && (
-                <>
-                  <div className="relative w-full max-w-xs aspect-[9/16] bg-ink/5 border border-ink/20">
-                    <Cropper
-                      image={filePreviewUrl}
-                      crop={mobileCrop}
-                      zoom={mobileZoom}
-                      aspect={9 / 16}
-                      onCropChange={setMobileCrop}
-                      onZoomChange={setMobileZoom}
-                      onCropComplete={(croppedAreaPercent) =>
-                        setMobileCroppedArea(croppedAreaPercent)
-                      }
-                      showGrid
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={3}
-                    step={0.01}
-                    value={mobileZoom}
-                    onChange={(e) => setMobileZoom(Number(e.target.value))}
-                    className="w-full max-w-xs mt-3"
-                  />
-                </>
-              )}
+            <div className="flex gap-8 flex-wrap">
+              <FocalPointPicker label="Desktop Focus" value={desktopFocal} onChange={setDesktopFocal} />
+              <FocalPointPicker label="Mobile Focus" value={mobileFocal} onChange={setMobileFocal} />
             </div>
           </div>
         )}

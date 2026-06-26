@@ -4,18 +4,8 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import Skeleton from "./ui/Skeleton";
 import FadeImage from "./FadeImage";
 
-function getCropTransform({
-  cropX = 0,
-  cropY = 0,
-  cropWidth = 100,
-  cropHeight = 100,
-} = {}) {
-  const scaleX = 100 / cropWidth;
-  const scaleY = 100 / cropHeight;
-  return {
-    transformOrigin: "top left",
-    transform: `translate(${-cropX * scaleX}%, ${-cropY * scaleY}%) scale(${scaleX}, ${scaleY})`,
-  };
+function getFocalPoint(val) {
+  return val && val !== "auto" && val !== "manual" ? val : "center center";
 }
 
 function CollectionCard({ collection, index }) {
@@ -24,18 +14,7 @@ function CollectionCard({ collection, index }) {
   const { scrollYProgress } = useScroll({ target: cardRef, offset: ["start end", "end start"] });
   const imgY = useTransform(scrollYProgress, [0, 1], reduceMotion ? ["0%", "0%"] : ["-8%", "8%"]);
 
-  const desktopCropStyle = getCropTransform({
-    cropX: collection.desktopCropX,
-    cropY: collection.desktopCropY,
-    cropWidth: collection.desktopCropWidth,
-    cropHeight: collection.desktopCropHeight,
-  });
-  const mobileCropStyle = getCropTransform({
-    cropX: collection.mobileCropX,
-    cropY: collection.mobileCropY,
-    cropWidth: collection.mobileCropWidth,
-    cropHeight: collection.mobileCropHeight,
-  });
+  ;
 
   return (
     <motion.div
@@ -47,30 +26,23 @@ function CollectionCard({ collection, index }) {
     >
       <Link to={`/collections/${collection.slug}`} className="group block">
         <div className="relative aspect-[3/4] bg-cream border border-ink/10 overflow-hidden mb-5">
-         
           {collection.heroImageUrl ? (
             <>
               <FadeImage
                 src={collection.heroImageUrl}
                 alt={collection.altText || collection.name}
-                className="absolute inset-0 h-full w-full sm:hidden transition-transform duration-700 group-hover:scale-105"
-                style={getCropTransform({
-                  cropX: collection.mobileCropX,
-                  cropY: collection.mobileCropY,
-                  cropWidth: collection.mobileCropWidth,
-                  cropHeight: collection.mobileCropHeight,
-                })}
+                className="absolute inset-0 h-full w-full object-cover sm:hidden transition-transform duration-700 group-hover:scale-105"
+                style={{
+                  objectPosition: getFocalPoint(collection.mobileCropMode),
+                }}
               />
               <FadeImage
                 src={collection.heroImageUrl}
                 alt={collection.altText || collection.name}
-                className="absolute inset-0 h-full w-full hidden sm:block transition-transform duration-700 group-hover:scale-105"
-                style={getCropTransform({
-                  cropX: collection.desktopCropX,
-                  cropY: collection.desktopCropY,
-                  cropWidth: collection.desktopCropWidth,
-                  cropHeight: collection.desktopCropHeight,
-                })}
+                className="absolute inset-0 h-full w-full object-cover hidden sm:block transition-transform duration-700 group-hover:scale-105"
+                style={{
+                  objectPosition: getFocalPoint(collection.desktopCropMode),
+                }}
               />
             </>
           ) : (

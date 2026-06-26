@@ -5,13 +5,8 @@ import { useCart } from "../context/CartContext";
 import Skeleton from "../components/ui/Skeleton";
 import FadeImage from "../components/FadeImage";
 
-function getCropTransform({ cropX = 0, cropY = 0, cropWidth = 100, cropHeight = 100 } = {}) {
-  const scaleX = 100 / cropWidth;
-  const scaleY = 100 / cropHeight;
-  return {
-    transformOrigin: "top left",
-    transform: `translate(${-cropX * scaleX}%, ${-cropY * scaleY}%) scale(${scaleX}, ${scaleY})`,
-  };
+function getFocalPoint(val) {
+  return val && val !== "auto" && val !== "manual" ? val : "center center";
 }
 
 function ProductPage() {
@@ -91,24 +86,18 @@ function ProductPage() {
             <FadeImage
               src={product.images[0].url}
               alt={product.images[0].altText || product.name}
-              className="absolute inset-0 h-full w-full sm:hidden"
-              style={getCropTransform({
-                cropX: product.images[0].mobileCropX,
-                cropY: product.images[0].mobileCropY,
-                cropWidth: product.images[0].mobileCropWidth,
-                cropHeight: product.images[0].mobileCropHeight,
-              })}
+              className="absolute inset-0 h-full w-full object-cover sm:hidden"
+              style={{
+                objectPosition: getFocalPoint(product.images[0].mobileCropMode),
+              }}
             />
             <FadeImage
               src={product.images[0].url}
               alt={product.images[0].altText || product.name}
-              className="absolute inset-0 h-full w-full hidden sm:block"
-              style={getCropTransform({
-                cropX: product.images[0].desktopCropX,
-                cropY: product.images[0].desktopCropY,
-                cropWidth: product.images[0].desktopCropWidth,
-                cropHeight: product.images[0].desktopCropHeight,
-              })}
+              className="absolute inset-0 h-full w-full object-cover hidden sm:block"
+              style={{
+                objectPosition: getFocalPoint(product.images[0].desktopCropMode),
+              }}
             />
           </>
         )}
@@ -125,7 +114,9 @@ function ProductPage() {
         <p className="text-ink/70 mb-8">{product.description}</p>
 
         <div className="mb-8">
-          <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-3">Size</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-3">
+            Size
+          </p>
           <div className="flex flex-wrap gap-2">
             {product.variants.map((v) => (
               <button
@@ -146,16 +137,18 @@ function ProductPage() {
 
         <button
           onClick={handleAddToCart}
-          disabled={!selectedVariant || selectedVariant.stock < 1 || status === "adding"}
+          disabled={
+            !selectedVariant || selectedVariant.stock < 1 || status === "adding"
+          }
           className="w-full bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 hover:bg-charcoal transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
         >
           {status === "adding"
             ? "Adding..."
             : status === "added"
-            ? "Added to Bag"
-            : selectedVariant?.stock < 1
-            ? "Out of Stock"
-            : "Add to Bag"}
+              ? "Added to Bag"
+              : selectedVariant?.stock < 1
+                ? "Out of Stock"
+                : "Add to Bag"}
         </button>
       </div>
     </div>

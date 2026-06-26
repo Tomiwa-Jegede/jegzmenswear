@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../lib/axios";
 import Hero from "../components/Hero";
 import FeaturedCollections from "../components/FeaturedCollections";
-import RugbyPoloSpotlight from "../components/RugbyPoloSpotlight";
+import RugbyPoloSpotlight from "../components/Spotlight";
 import CampaignEditorial from "../components/CampaignEditorial";
 import BrandPhilosophy from "../components/BrandPhilosophy";
 

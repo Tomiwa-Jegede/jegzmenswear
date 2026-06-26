@@ -17,4 +17,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const isAdminRoute = window.location.pathname.startsWith("/admin");
+      if (isAdminRoute && window.location.pathname !== "/admin/login") {
+        localStorage.removeItem("onfleek_admin_token");
+        window.location.href = "/admin/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

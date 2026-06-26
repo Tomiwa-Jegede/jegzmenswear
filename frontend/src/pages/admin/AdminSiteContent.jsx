@@ -1,24 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useToast } from "../../context/ToastContext";
 import api from "../../lib/axios";
+import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import Skeleton from "../../components/ui/Skeleton";
 
 const DEFAULTS = {
-  spotlight_collection_slug: "rugby-polo",
+  spotlight_collection_slug: "",
   spotlight_label: "Spotlight",
   spotlight_headline: "Wear Your Legacy.",
   spotlight_body:
     "Inspired by the confidence of campus icons and reimagined for a generation building its future in real time.",
   spotlight_cta: "View Full Collection",
+  spotlight_image_url: "",
 };
 
 function AdminSiteContent() {
   const [form, setForm] = useState(DEFAULTS);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [spotlightFile, setSpotlightFile] = useState(null);
+  const [spotlightPreview, setSpotlightPreview] = useState(null);
+  const [uploadingSpotlight, setUploadingSpotlight] = useState(false);
 
   useEffect(() => {
     Promise.all([api.get("/site-content"), api.get("/collections/admin/all")])
@@ -36,17 +42,25 @@ function AdminSiteContent() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError("");
     setSaving(true);
     setSaved(false);
     try {
-      await api.put("/site-content", form);
+      let payload = { ...form };
+      if (spotlightFile) {
+        setUploadingSpotlight(true);
+        const url = await uploadImageToCloudinary(spotlightFile);
+        payload.spotlight_image_url = url;
+        setUploadingSpotlight(false);
+      }
+      await api.put("/site-content", payload);
+      setForm(payload);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setError(err.response?.data?.error || "Save failed");
+      showToast("Your changes could not be saved. Please try again.");
     } finally {
       setSaving(false);
+      setUploadingSpotlight(false);
     }
   }
 
@@ -72,10 +86,10 @@ function AdminSiteContent() {
       >
         ← Back to Admin
       </Link>
-      <h1 className="font-serif text-3xl text-ink mb-8">Site Content</h1>
+      <h1 className="font-serif text-3xl text-ink mb-8">Manage Spotlight</h1>
 
       <form onSubmit={handleSubmit} className="space-y-10">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        
 
         {/* Rugby Polo Spotlight */}
         <section className="border border-ink/10 p-6 space-y-4">
@@ -139,6 +153,40 @@ function AdminSiteContent() {
               value={form.spotlight_cta}
               onChange={(e) => set("spotlight_cta", e.target.value)}
               className="w-full border border-ink/20 px-4 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+              Spotlight Image
+            </label>
+            {(spotlightPreview || form.spotlight_image_url) && (
+              <img
+                src={spotlightPreview || form.spotlight_image_url}
+                alt="Spotlight preview"
+                className="w-40 h-52 object-cover mb-3 border border-ink/10"
+              />
+            )}
+            <label
+              htmlFor="spotlight-image-file"
+              className="flex flex-col items-center justify-center w-32 h-32 border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
+            >
+              {spotlightFile ? (
+                <span className="text-xs text-center px-2 break-all">{spotlightFile.name}</span>
+              ) : (
+                <span className="text-3xl font-light leading-none">+</span>
+              )}
+            </label>
+            <input
+              id="spotlight-image-file"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files[0];
+                setSpotlightFile(f);
+                if (spotlightPreview) URL.revokeObjectURL(spotlightPreview);
+                setSpotlightPreview(f ? URL.createObjectURL(f) : null);
+              }}
             />
           </div>
         </section>

@@ -5,12 +5,12 @@ import api from "../lib/axios";
 import FadeImage from "./FadeImage";
 
 const DEFAULTS = {
-  spotlight_collection_slug: "rugby-polo",
+  spotlight_collection_slug: "",
   spotlight_label: "Spotlight",
   spotlight_headline: "Wear Your Legacy.",
   spotlight_body:
     "Inspired by the confidence of campus icons and reimagined for a generation building its future in real time.",
-  spotlight_cta: "View Full Collection",
+  spotlight_cta: "Shop",
 };
 
 function formatPrice(price) {
@@ -23,16 +23,7 @@ function formatPrice(price) {
   }).format(value);
 }
 
-function getCropTransform({ cropX = 0, cropY = 0, cropWidth = 100, cropHeight = 100 } = {}) {
-  const scaleX = 100 / cropWidth;
-  const scaleY = 100 / cropHeight;
-  const translateXPercent = -cropX * scaleX;
-  const translateYPercent = -cropY * scaleY;
-  return {
-    transformOrigin: "top left",
-    transform: `translate(${translateXPercent}%, ${translateYPercent}%) scale(${scaleX}, ${scaleY})`,
-  };
-}
+
 
 function RugbyPoloSpotlight() {
   const [collection, setCollection] = useState(null);
@@ -48,10 +39,26 @@ function RugbyPoloSpotlight() {
       .then((res) => {
         const merged = { ...DEFAULTS, ...res.data };
         setContent(merged);
-        return api.get(`/collections/${merged.spotlight_collection_slug}`);
+        if (merged.spotlight_collection_slug) {
+          return api
+            .get(`/collections/${merged.spotlight_collection_slug}`)
+            .then((res) => setCollection(res.data))
+            .catch(() =>
+              api
+                .get("/collections")
+                .then((res) => setCollection(res.data?.[0] || null))
+                .catch(() => setLoadFailed(true)),
+            );
+        }
+        return api
+          .get("/collections")
+          .then((res) => setCollection(res.data?.[0] || null))
+          .catch(() => setLoadFailed(true));
       })
-      .then((res) => setCollection(res.data))
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setLoadFailed(true);
+      });
   }, []);
 
   if (!collection) {
@@ -93,7 +100,10 @@ function RugbyPoloSpotlight() {
   const otherProducts = products.filter((p) => p.id !== featuredProduct?.id);
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden bg-cream px-6 py-20 sm:px-10 lg:px-16">
+    <section
+      ref={sectionRef}
+      className="relative overflow-hidden bg-cream px-6 py-20 sm:px-10 lg:px-16"
+    >
       <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
@@ -103,31 +113,12 @@ function RugbyPoloSpotlight() {
           style={{ y: imageParallaxY }}
           className="relative aspect-[4/5] bg-offwhite border border-ink/10 overflow-hidden"
         >
-          {collection.heroImageUrl && (
-            <>
-              <FadeImage
-                src={collection.heroImageUrl}
-                alt={collection.altText || collection.name}
-                style={getCropTransform({
-                  cropX: collection.mobileCropX,
-                  cropY: collection.mobileCropY,
-                  cropWidth: collection.mobileCropWidth,
-                  cropHeight: collection.mobileCropHeight,
-                })}
-                className="absolute inset-0 h-full w-full sm:hidden"
-              />
-              <FadeImage
-                src={collection.heroImageUrl}
-                alt={collection.altText || collection.name}
-                style={getCropTransform({
-                  cropX: collection.desktopCropX,
-                  cropY: collection.desktopCropY,
-                  cropWidth: collection.desktopCropWidth,
-                  cropHeight: collection.desktopCropHeight,
-                })}
-                className="absolute inset-0 h-full w-full hidden sm:block"
-              />
-            </>
+          {(content.spotlight_image_url || collection.heroImageUrl) && (
+            <img
+              src={content.spotlight_image_url || collection.heroImageUrl}
+              alt={collection.name}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
           )}
         </motion.div>
 
@@ -178,7 +169,7 @@ function RugbyPoloSpotlight() {
           </div>
 
           <Link
-            to={`/collections/${collection.slug}`}
+            to="/shop"
             className="inline-block mt-10 border border-ink text-ink px-8 py-3 text-sm uppercase tracking-[0.15em] hover:bg-ink hover:text-offwhite transition-colors"
           >
             {content.spotlight_cta}

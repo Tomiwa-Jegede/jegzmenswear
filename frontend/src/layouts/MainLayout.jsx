@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import PageLoader from "../components/PageLoader";
+import ScrollToTop from "../components/ScrollToTop";
 import Footer from "../components/Footer";
 import CartDrawer from "../components/CartDrawer";
 import MobileNav from "../components/MobileNav";
@@ -98,12 +99,14 @@ function MainLayout() {
       setScrolled(true);
       return;
     }
+
     setScrolled(false);
     const handleScroll = () => {
       const hero = document.querySelector("section[data-hero]");
       if (!hero) return;
-      setScrolled(window.scrollY > hero.offsetHeight * 0.85);
+      setScrolled(window.scrollY >= hero.offsetHeight);
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isHome]);
@@ -134,6 +137,7 @@ function MainLayout() {
   }, []);
   return (
     <div className="min-h-screen bg-offwhite flex flex-col">
+      <ScrollToTop />
       <PageLoader visible={loaderVisible} />
       <style>{`
        .star-ring {
@@ -145,16 +149,16 @@ function MainLayout() {
           margin-top: -90px;
           margin-left: -90px;
           transform-style: preserve-3d;
-          animation: star-ring-spin 8s linear infinite;
+          animation: star-ring-spin 5s linear infinite;
         }
 
       .star-ring .star {
           position: absolute;
           top: 50%;
           left: 50%;
-          font-size: 25px;
+          font-size: 20px;
           line-height: 1;
-          transform: translate(-50%, -50%) rotateX(calc(var(--i) * 60deg)) translateZ(70px);
+          transform: translate(-50%, -50%) rotateX(calc(var(--i) * 60deg)) translateZ(50px);
         }
 
        @media (max-width: 639px) {

@@ -44,7 +44,7 @@ function AdminHome() {
             to="/admin/site-content"
             className="block border border-ink/10 px-6 py-4 text-sm uppercase tracking-[0.15em] text-ink hover:bg-ink hover:text-offwhite transition-colors"
           >
-            Site Content
+            Manage Spotlight
           </Link>
         </li>
       </ul>

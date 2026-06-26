@@ -68,39 +68,14 @@ function Hero() {
 
   // Reproduce the admin-selected crop box as a scale+translate transform.
   // Pass the relevant breakpoint's crop fields (desktop* or mobile*).
-  function getCropTransform({
-    cropX = 0,
-    cropY = 0,
-    cropWidth = 100,
-    cropHeight = 100,
-  } = {}) {
-    const scaleX = 100 / cropWidth;
-    const scaleY = 100 / cropHeight;
-    const translateXPercent = -cropX * scaleX;
-    const translateYPercent = -cropY * scaleY;
-
-    return {
-      transformOrigin: "top left",
-      transform: `translate(${translateXPercent}%, ${translateYPercent}%) scale(${scaleX}, ${scaleY})`,
-    };
+  function getDesktopObjectPosition(img) {
+    const val = img?.desktopCropMode;
+    return val && val !== "auto" && val !== "manual" ? val : "center center";
   }
 
-  function getDesktopCropTransform(img) {
-    return getCropTransform({
-      cropX: img?.desktopCropX,
-      cropY: img?.desktopCropY,
-      cropWidth: img?.desktopCropWidth,
-      cropHeight: img?.desktopCropHeight,
-    });
-  }
-
-  function getMobileCropTransform(img) {
-    return getCropTransform({
-      cropX: img?.mobileCropX,
-      cropY: img?.mobileCropY,
-      cropWidth: img?.mobileCropWidth,
-      cropHeight: img?.mobileCropHeight,
-    });
+  function getMobileObjectPosition(img) {
+    const val = img?.mobileCropMode;
+    return val && val !== "auto" && val !== "manual" ? val : "center center";
   }
 
   const Dots = validImages.length > 1 && (
@@ -174,8 +149,9 @@ function Hero() {
               src={currentImage.url}
               alt={currentImage.alt || "Onfleek campaign portrait"}
               loading="eager"
-              className="absolute inset-0 h-full w-full"
-              style={getDesktopCropTransform(currentImage)}
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ objectPosition: getDesktopObjectPosition(currentImage) }}
             />
           </motion.div>
         </AnimatePresence>
@@ -199,8 +175,9 @@ function Hero() {
           src={currentImage.url}
           alt={currentImage.alt || "Onfleek campaign portrait"}
           loading="eager"
-          className="absolute inset-0 h-full w-full"
-          style={getMobileCropTransform(currentImage)}
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ objectPosition: getMobileObjectPosition(currentImage) }}
         />
       </motion.div>
     </AnimatePresence>
@@ -288,7 +265,7 @@ function Hero() {
           </motion.div>
 
           {/* Action column — quiet, curated, upper-third weighted */}
-          <div className="relative flex w-[38%] flex-col items-start gap-10 px-16 pt-[28vh]">
+          <div data-hero-action className="relative flex w-[38%] flex-col items-start gap-10 px-16 pt-[calc(var(--nav-height,89px)+4rem)]">
             <p className="text-xs uppercase tracking-[0.3em] text-burgundy">
               Onfleek Worldwide
             </p>

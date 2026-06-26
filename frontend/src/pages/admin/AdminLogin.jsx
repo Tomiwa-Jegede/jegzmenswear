@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../../context/AdminAuthContext";
+import { useToast } from "../../context/ToastContext";
 import { IconEye, IconEyeOff } from "../../components/icons";
 
 function AdminLogin() {
@@ -8,19 +9,18 @@ function AdminLogin() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError("");
     setLoading(true);
     try {
       await login(username, password);
       navigate("/admin");
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      showToast("Incorrect username or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -33,7 +33,7 @@ function AdminLogin() {
         className="w-full max-w-sm border border-ink/10 p-8"
       >
         <h1 className="font-serif text-2xl text-ink mb-6">Admin Login</h1>
-        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+        
         <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
           Username
         </label>

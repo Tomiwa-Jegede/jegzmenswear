@@ -7,30 +7,30 @@ const placeholders = [
   {
     id: "01",
     label: "Studio Portrait",
-    width: "w-[160px] sm:w-[200px]",
-    height: "h-[380px] sm:h-[460px]",
+    width: "w-[160px] sm:w-[360px]",
+    height: "h-[380px] sm:h-[580px]",
     offset: "",
   },
   {
     id: "02",
     label: "Campus-Inspired",
-    width: "w-[150px] sm:w-[190px]",
-    height: "h-[440px] sm:h-[540px]",
-    offset: "mb-10",
+    width: "w-[150px] sm:w-[340px]",
+    height: "h-[440px] sm:h-[660px]",
+    offset: "sm:mb-14",
   },
   {
     id: "03",
     label: "Street-Style",
-    width: "w-[150px] sm:w-[190px]",
-    height: "h-[400px] sm:h-[480px]",
+    width: "w-[150px] sm:w-[340px]",
+    height: "h-[400px] sm:h-[620px]",
     offset: "",
   },
   {
     id: "04",
     label: "Quiet Luxury Interior",
-    width: "w-[160px] sm:w-[200px]",
-    height: "h-[360px] sm:h-[440px]",
-    offset: "mb-6",
+    width: "w-[160px] sm:w-[360px]",
+    height: "h-[360px] sm:h-[560px]",
+    offset: "sm:mb-8",
   },
 ];
 
@@ -50,15 +50,8 @@ const quotes = [
   "Young people with vision don't wait for permission.",
 ];
 
-function getCropTransform({ cropX = 0, cropY = 0, cropWidth = 100, cropHeight = 100 } = {}) {
-  const scaleX = 100 / cropWidth;
-  const scaleY = 100 / cropHeight;
-  const translateXPercent = -cropX * scaleX;
-  const translateYPercent = -cropY * scaleY;
-  return {
-    transformOrigin: "top left",
-    transform: `translate(${translateXPercent}%, ${translateYPercent}%) scale(${scaleX}, ${scaleY})`,
-  };
+function getFocalPoint(val) {
+  return val && val !== "auto" && val !== "manual" ? val : "center center";
 }
 
 function EditorialPlaceholder({
@@ -70,19 +63,8 @@ function EditorialPlaceholder({
   delay,
   image,
 }) {
-  const desktopStyle = image ? getCropTransform({
-    cropX: image.desktopCropX,
-    cropY: image.desktopCropY,
-    cropWidth: image.desktopCropWidth,
-    cropHeight: image.desktopCropHeight,
-  }) : {};
-
-  const mobileStyle = image ? getCropTransform({
-    cropX: image.mobileCropX,
-    cropY: image.mobileCropY,
-    cropWidth: image.mobileCropWidth,
-    cropHeight: image.mobileCropHeight,
-  }) : {};
+  const desktopStyle = image ? { objectPosition: getFocalPoint(image.desktopCropMode) } : {};
+  const mobileStyle = image ? { objectPosition: getFocalPoint(image.mobileCropMode) } : {};
 
   return (
     <div
@@ -93,13 +75,13 @@ function EditorialPlaceholder({
           <FadeImage
             src={image.url}
             alt={image.altText || label}
-            className="absolute inset-0 h-full w-full sm:hidden"
+            className="absolute inset-0 h-full w-full object-cover sm:hidden"
             style={mobileStyle}
           />
           <FadeImage
             src={image.url}
             alt={image.altText || label}
-            className="absolute inset-0 h-full w-full hidden sm:block"
+            className="absolute inset-0 h-full w-full object-cover hidden sm:block"
             style={desktopStyle}
           />
         </>
@@ -179,7 +161,7 @@ function CampaignEditorial() {
 
       <div className="w-full overflow-hidden mb-20">
         <motion.div
-          className="flex items-end gap-4 sm:gap-6 w-fit pb-2"
+          className="flex items-end gap-4 sm:gap-10 w-fit pb-2"
           animate={marqueeAnimate}
           transition={marqueeTransition}
         >

@@ -1,9 +1,56 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Cropper from "react-easy-crop";
+import { useToast } from "../../context/ToastContext";
 import api from "../../lib/axios";
 import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import Skeleton from "../../components/ui/Skeleton";
+
+const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "Custom"];
+
+const FOCAL_OPTIONS = [
+  ["left top", "center top", "right top"],
+  ["left center", "center center", "right center"],
+  ["left bottom", "center bottom", "right bottom"],
+];
+
+function FocalPointPicker({ label, value, onChange }) {
+  const current = value || "center center";
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+        {label}
+      </p>
+      <div className="grid grid-cols-3 gap-1 w-28">
+        {FOCAL_OPTIONS.flat().map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => onChange(v)}
+            title={v}
+            className={`h-8 w-8 border flex items-center justify-center transition-colors cursor-pointer ${current === v ? "border-ink bg-ink" : "border-ink/20 hover:border-ink"}`}
+          >
+            <span
+              className={`block w-2 h-2 rounded-full ${current === v ? "bg-offwhite" : "bg-ink/40"}`}
+            />
+          </button>
+        ))}
+      </div>
+      <p className="text-[10px] text-ink/40 mt-1">{current}</p>
+    </div>
+  );
+}
+
+function generateSKU(name, size, color) {
+  const namePart = (name || "PRD")
+    .replace(/\s+/g, "-")
+    .toUpperCase()
+    .slice(0, 6);
+  const sizePart = (size || "XX").toUpperCase().slice(0, 3);
+  const colorPart =
+    (color || "").replace(/\s+/g, "").toUpperCase().slice(0, 3) || "CLR";
+  const rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+  return `${namePart}-${sizePart}-${colorPart}-${rand}`;
+}
 
 const emptyProductForm = {
   name: "",
@@ -14,7 +61,13 @@ const emptyProductForm = {
   isActive: true,
 };
 
-const emptyVariantForm = { size: "", color: "", sku: "", stock: 0 };
+const emptyVariantForm = {
+  size: "M",
+  color: "",
+  sku: "",
+  stock: 0,
+  customSize: "",
+};
 const emptyImageForm = { altText: "", position: 0 };
 
 function AdminProducts() {
@@ -31,24 +84,18 @@ function AdminProducts() {
   const [imageForm, setImageForm] = useState(emptyImageForm);
   const [uploading, setUploading] = useState(false);
   const [imageFilePreviewUrl, setImageFilePreviewUrl] = useState(null);
-  const [desktopCropMode, setDesktopCropMode] = useState("auto");
-  const [desktopCrop, setDesktopCrop] = useState({ x: 0, y: 0 });
-  const [desktopZoom, setDesktopZoom] = useState(1);
-  const [desktopCroppedArea, setDesktopCroppedArea] = useState({ x: 0, y: 0, width: 100, height: 100 });
-  const [mobileCropMode, setMobileCropMode] = useState("auto");
-  const [mobileCrop, setMobileCrop] = useState({ x: 0, y: 0 });
-  const [mobileZoom, setMobileZoom] = useState(1);
-  const [mobileCroppedArea, setMobileCroppedArea] = useState({ x: 0, y: 0, width: 100, height: 100 });
-   const [error, setError] = useState("");
-   const [saving, setSaving] = useState(false);
-   const [loading, setLoading] = useState(true);
-   function loadProducts() {
-     api
-       .get("/products/admin/all")
-       .then((res) => setProducts(res.data))
-       .catch(console.error)
-       .finally(() => setLoading(false));
-   }
+  const [desktopFocal, setDesktopFocal] = useState("center center");
+  const [mobileFocal, setMobileFocal] = useState("center center");
+  const { showToast } = useToast();
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  function loadProducts() {
+    api
+      .get("/products/admin/all")
+      .then((res) => setProducts(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }
 
   function loadCollections() {
     api
@@ -70,21 +117,13 @@ function AdminProducts() {
     setImageFile(null);
     setImageFilePreviewUrl(null);
     setImageForm(emptyImageForm);
-    setDesktopCropMode("auto");
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(1);
-    setDesktopCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
-    setMobileCropMode("auto");
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(1);
-    setMobileCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
-    setError("");
+    setDesktopFocal("center center");
+    setMobileFocal("center center");
     setCreateStep(1);
     setView("form");
   }
 
   async function startEdit(productId) {
-    setError("");
     try {
       const { data } = await api.get(`/products/admin/${productId}`);
       setActiveProduct(data);
@@ -108,7 +147,7 @@ function AdminProducts() {
       setVariantEdits(edits);
       setView("form");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to load product");
+      showToast("Unable to load product details. Please try again.");
     }
   }
 
@@ -123,21 +162,13 @@ function AdminProducts() {
     setImageFile(null);
     setImageFilePreviewUrl(null);
     setImageForm(emptyImageForm);
-    setDesktopCropMode("auto");
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(1);
-    setDesktopCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
-    setMobileCropMode("auto");
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(1);
-    setMobileCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
-    setError("");
+    setDesktopFocal("center center");
+    setMobileFocal("center center");
     loadProducts();
   }
 
   async function handleProductSubmit(e) {
     e.preventDefault();
-    setError("");
     if (activeProduct) {
       // Edit mode — save product details immediately as before
       setSaving(true);
@@ -150,10 +181,13 @@ function AdminProducts() {
           isFeatured: form.isFeatured,
           isActive: form.isActive,
         };
-        const { data } = await api.put(`/products/${activeProduct.id}`, payload);
+        const { data } = await api.put(
+          `/products/${activeProduct.id}`,
+          payload,
+        );
         setActiveProduct({ ...activeProduct, ...data });
       } catch (err) {
-        setError(err.response?.data?.error || "Save failed");
+        showToast("Your changes could not be saved. Please try again.");
       } finally {
         setSaving(false);
       }
@@ -177,7 +211,6 @@ function AdminProducts() {
   async function handleFinalCreate(e) {
     e.preventDefault();
     if (!imageFile) return;
-    setError("");
     setSaving(true);
     try {
       // 1. Create product
@@ -203,23 +236,13 @@ function AdminProducts() {
         url,
         altText: imageForm.altText,
         position: Number(imageForm.position),
-        desktopCropMode,
-        desktopCropX: desktopCroppedArea.x,
-        desktopCropY: desktopCroppedArea.y,
-        desktopCropWidth: desktopCroppedArea.width,
-        desktopCropHeight: desktopCroppedArea.height,
-        desktopZoom,
-        mobileCropMode,
-        mobileCropX: mobileCroppedArea.x,
-        mobileCropY: mobileCroppedArea.y,
-        mobileCropWidth: mobileCroppedArea.width,
-        mobileCropHeight: mobileCroppedArea.height,
-        mobileZoom,
+        desktopCropMode: desktopFocal,
+        mobileCropMode: mobileFocal,
       });
       // 4. Switch to edit mode for the completed product
       await startEdit(product.id);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to create product");
+      showToast("The product could not be created. Please check your details and try again.");
     } finally {
       setSaving(false);
     }
@@ -234,10 +257,9 @@ function AdminProducts() {
   async function handleAddVariant(e) {
     e.preventDefault();
     if (!activeProduct) return;
-    setError("");
     try {
       await api.post(`/products/${activeProduct.id}/variants`, {
-        size: variantForm.size,
+        size: variantForm.size === "Custom" ? (variantForm.customSize || variantForm.size) : variantForm.size,
         color: variantForm.color,
         sku: variantForm.sku,
         stock: Number(variantForm.stock),
@@ -245,7 +267,7 @@ function AdminProducts() {
       setVariantForm(emptyVariantForm);
       await startEdit(activeProduct.id);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to add variant");
+      showToast("The variant could not be added. Please check the details and try again.");
     }
   }
 
@@ -257,7 +279,6 @@ function AdminProducts() {
   }
 
   async function handleSaveVariant(variantId) {
-    setError("");
     const edit = variantEdits[variantId];
     try {
       await api.put(`/products/variants/${variantId}`, {
@@ -268,7 +289,7 @@ function AdminProducts() {
       });
       await startEdit(activeProduct.id);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to save variant");
+      showToast("The variant could not be saved. Please try again.");
     }
   }
 
@@ -281,10 +302,6 @@ function AdminProducts() {
   function handleImageFileChange(e) {
     const selected = e.target.files[0];
     setImageFile(selected);
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(1);
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(1);
     if (imageFilePreviewUrl) URL.revokeObjectURL(imageFilePreviewUrl);
     setImageFilePreviewUrl(selected ? URL.createObjectURL(selected) : null);
   }
@@ -292,7 +309,6 @@ function AdminProducts() {
   async function handleAddImage(e) {
     e.preventDefault();
     if (!activeProduct || !imageFile) return;
-    setError("");
     setUploading(true);
     try {
       const url = await uploadImageToCloudinary(imageFile);
@@ -300,33 +316,17 @@ function AdminProducts() {
         url,
         altText: imageForm.altText,
         position: Number(imageForm.position),
-        desktopCropMode,
-        desktopCropX: desktopCroppedArea.x,
-        desktopCropY: desktopCroppedArea.y,
-        desktopCropWidth: desktopCroppedArea.width,
-        desktopCropHeight: desktopCroppedArea.height,
-        desktopZoom,
-        mobileCropMode,
-        mobileCropX: mobileCroppedArea.x,
-        mobileCropY: mobileCroppedArea.y,
-        mobileCropWidth: mobileCroppedArea.width,
-        mobileCropHeight: mobileCroppedArea.height,
-        mobileZoom,
+        desktopCropMode: desktopFocal,
+        mobileCropMode: mobileFocal,
       });
       setImageFile(null);
       setImageFilePreviewUrl(null);
       setImageForm(emptyImageForm);
-      setDesktopCropMode("auto");
-      setDesktopCrop({ x: 0, y: 0 });
-      setDesktopZoom(1);
-      setDesktopCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
-      setMobileCropMode("auto");
-      setMobileCrop({ x: 0, y: 0 });
-      setMobileZoom(1);
-      setMobileCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
+      setDesktopFocal("center center");
+      setMobileFocal("center center");
       await startEdit(activeProduct.id);
     } catch (err) {
-      setError(err.response?.data?.error || "Image upload failed");
+      showToast("The image could not be uploaded. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -336,31 +336,97 @@ function AdminProducts() {
     await api.delete(`/products/images/${imageId}`);
     await startEdit(activeProduct.id);
   }
-if (loading && view === "list") {
-  return (
-    <div className="px-6 py-12 max-w-4xl">
-      <Skeleton className="h-10 w-48 mb-8" />
+  if (loading && view === "list") {
+    return (
+      <div className="px-6 py-12 max-w-4xl">
+        <Skeleton className="h-10 w-48 mb-8" />
 
-      <div className="space-y-4">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="border border-ink/10 p-4 flex gap-4">
-            <Skeleton className="w-16 h-16" />
+        <div className="space-y-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="border border-ink/10 p-4 flex gap-4">
+              <Skeleton className="w-16 h-16" />
 
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-3 w-64" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-64" />
+              </div>
+
+              <div className="flex gap-3">
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-14" />
+              </div>
             </div>
-
-            <div className="flex gap-3">
-              <Skeleton className="h-4 w-12" />
-              <Skeleton className="h-4 w-14" />
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
+  if (view === "list") {
+    return (
+      <div className="px-6 py-12 max-w-3xl">
+        <Link
+          to="/admin"
+          className="text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors mb-6 inline-block"
+        >
+          ← Back to Admin
+        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="font-serif text-3xl text-ink">Products</h1>
+          <button
+            onClick={startCreate}
+            className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors cursor-pointer"
+          >
+            New Product
+          </button>
+        </div>
+        <ul className="space-y-4">
+          {products.map((p) => (
+            <li
+              key={p.id}
+              className="flex flex-col sm:flex-row sm:items-center gap-4 border border-ink/10 p-4"
+            >
+              <div className="flex items-center gap-4">
+                {p.images?.[0] ? (
+                  <img
+                    src={p.images[0].url}
+                    alt={p.images[0].altText || p.name}
+                    className="w-20 h-20 object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-20 h-20 flex-shrink-0 bg-ink/5 border border-ink/10" />
+                )}
+                <div className="flex-1">
+                  <p className="text-sm text-ink">{p.name}</p>
+                  <p className="text-xs text-ink/50">
+                    ₦{Number(p.price).toLocaleString()} · {p.isActive ? "Active" : "Inactive"}{p.isFeatured ? " · Featured" : ""}
+                  </p>
+                  <p className="text-xs text-ink/40">{p.collection?.name}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 sm:ml-auto">
+                <button
+                  onClick={() => startEdit(p.id)}
+                  className="text-xs uppercase tracking-[0.2em] text-ink/60 hover:text-ink transition-colors cursor-pointer"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteProduct(p.id)}
+                  className="text-xs uppercase tracking-[0.2em] text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+          {products.length === 0 && (
+            <p className="text-sm text-ink/50">No products yet.</p>
+          )}
+        </ul>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 py-12 max-w-3xl">
@@ -374,14 +440,16 @@ if (loading && view === "list") {
         {activeProduct ? "Edit Product" : "New Product"}
       </h1>
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      
 
       {/* ── Step indicator (create mode only) ── */}
       {!activeProduct && (
         <div className="flex items-center gap-3 mb-8">
           {["Details", "Variants", "Image"].map((label, i) => (
             <div key={label} className="flex items-center gap-3">
-              <span className={`text-xs uppercase tracking-[0.2em] ${createStep === i + 1 ? "text-ink font-medium" : "text-ink/30"}`}>
+              <span
+                className={`text-xs uppercase tracking-[0.2em] ${createStep === i + 1 ? "text-ink font-medium" : "text-ink/30"}`}
+              >
                 {i + 1}. {label}
               </span>
               {i < 2 && <span className="text-ink/20">→</span>}
@@ -414,7 +482,9 @@ if (loading && view === "list") {
             </label>
             <textarea
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
               className="w-full border border-ink/20 px-4 py-2 text-sm"
               rows={3}
             />
@@ -439,14 +509,19 @@ if (loading && view === "list") {
               </label>
               <select
                 value={form.collectionId}
-                onChange={(e) => setForm({ ...form, collectionId: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, collectionId: e.target.value })
+                }
                 className="w-full border border-ink/20 px-4 py-2 text-sm bg-offwhite"
                 required
               >
-                <option value="" disabled>Select collection</option>
+                <option value="" disabled>
+                  Select collection
+                </option>
                 {collections.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}{!c.isActive ? " (inactive)" : ""}
+                    {c.name}
+                    {!c.isActive ? " (inactive)" : ""}
                   </option>
                 ))}
               </select>
@@ -457,7 +532,9 @@ if (loading && view === "list") {
               <input
                 type="checkbox"
                 checked={form.isFeatured}
-                onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
+                onChange={(e) =>
+                  setForm({ ...form, isFeatured: e.target.checked })
+                }
               />
               Featured
             </label>
@@ -466,7 +543,9 @@ if (loading && view === "list") {
                 <input
                   type="checkbox"
                   checked={form.isActive}
-                  onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, isActive: e.target.checked })
+                  }
                 />
                 Active
               </label>
@@ -477,7 +556,11 @@ if (loading && view === "list") {
             disabled={saving}
             className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            {saving ? "Saving..." : activeProduct ? "Save Product" : "Next: Add Variants →"}
+            {saving
+              ? "Saving..."
+              : activeProduct
+                ? "Save Product"
+                : "Next: Add Variants →"}
           </button>
         </form>
       )}
@@ -485,11 +568,16 @@ if (loading && view === "list") {
       {/* ── Step 2: Variants (create mode only — edit mode uses the section below) ── */}
       {!activeProduct && createStep === 2 && (
         <div className="border border-ink/10 p-6 mb-10 space-y-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-2">Add at least one variant before continuing.</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-2">
+            Add at least one variant before continuing.
+          </p>
           {pendingVariants.length > 0 && (
             <ul className="space-y-2 mb-4">
               {pendingVariants.map((v) => (
-                <li key={v.id} className="flex items-center gap-3 border border-ink/10 p-2 text-sm">
+                <li
+                  key={v.id}
+                  className="flex items-center gap-3 border border-ink/10 p-2 text-sm"
+                >
                   <span className="text-ink">{v.size}</span>
                   {v.color && <span className="text-ink/50">{v.color}</span>}
                   <span className="text-ink/50">{v.sku}</span>
@@ -505,34 +593,86 @@ if (loading && view === "list") {
               ))}
             </ul>
           )}
-          <form onSubmit={handleAddPendingVariant} className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
+          <form
+            onSubmit={handleAddPendingVariant}
+            className="flex flex-col sm:flex-row gap-3"
+          >
+            <select
               value={variantForm.size}
-              onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value })}
-              placeholder="Size"
-              className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-20"
+              onChange={(e) =>
+                setVariantForm({
+                  ...variantForm,
+                  size: e.target.value,
+                  customSize: "",
+                })
+              }
+              className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24 bg-offwhite"
               required
-            />
+            >
+              {SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            {variantForm.size === "Custom" && (
+              <input
+                type="text"
+                value={variantForm.customSize}
+                onChange={(e) =>
+                  setVariantForm({ ...variantForm, customSize: e.target.value })
+                }
+                placeholder="Enter size"
+                className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
+                required
+              />
+            )}
             <input
               type="text"
               value={variantForm.color}
-              onChange={(e) => setVariantForm({ ...variantForm, color: e.target.value })}
+              onChange={(e) =>
+                setVariantForm({ ...variantForm, color: e.target.value })
+              }
               placeholder="Color"
               className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
             />
-            <input
-              type="text"
-              value={variantForm.sku}
-              onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
-              placeholder="SKU"
-              className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-32"
-              required
-            />
+            <div className="flex gap-1 items-center">
+              <input
+                type="text"
+                value={variantForm.sku}
+                onChange={(e) =>
+                  setVariantForm({ ...variantForm, sku: e.target.value })
+                }
+                placeholder="SKU"
+                className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-28"
+                required
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setVariantForm({
+                    ...variantForm,
+                    sku: generateSKU(
+                      form.name,
+                      variantForm.size === "Custom"
+                        ? variantForm.customSize
+                        : variantForm.size,
+                      variantForm.color,
+                    ),
+                  })
+                }
+                className="border border-ink/20 px-2 py-1 text-xs text-ink/60 hover:border-ink hover:text-ink transition-colors cursor-pointer whitespace-nowrap"
+                title="Auto-generate SKU"
+              >
+                Gen
+              </button>
+            </div>
             <input
               type="number"
               value={variantForm.stock}
-              onChange={(e) => setVariantForm({ ...variantForm, stock: e.target.value })}
+              onChange={(e) =>
+                setVariantForm({ ...variantForm, stock: e.target.value })
+              }
               placeholder="Stock"
               className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-20"
             />
@@ -565,14 +705,21 @@ if (loading && view === "list") {
 
       {/* ── Step 3: Image (create mode only) ── */}
       {!activeProduct && createStep === 3 && (
-        <form onSubmit={handleFinalCreate} className="border border-ink/10 p-6 mb-10 space-y-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-2">Add at least one image to complete the product.</p>
+        <form
+          onSubmit={handleFinalCreate}
+          className="border border-ink/10 p-6 mb-10 space-y-4"
+        >
+          <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-2">
+            Add at least one image to complete the product.
+          </p>
           <label
             htmlFor="product-image-file"
             className="flex flex-col items-center justify-center w-32 h-32 border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
           >
             {imageFile ? (
-              <span className="text-xs text-center px-2 break-all">{imageFile.name}</span>
+              <span className="text-xs text-center px-2 break-all">
+                {imageFile.name}
+              </span>
             ) : (
               <span className="text-3xl font-light leading-none">+</span>
             )}
@@ -587,61 +734,59 @@ if (loading && view === "list") {
           />
           {imageFilePreviewUrl && (
             <div className="space-y-6">
-              <div>
-                <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">Desktop Crop</label>
-                <div className="flex gap-3 mb-3">
-                  <button type="button" onClick={() => setDesktopCropMode("auto")}
-                    className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${desktopCropMode === "auto" ? "border-ink bg-ink text-offwhite" : "border-ink/20 text-ink/60 hover:border-ink"}`}>Auto</button>
-                  <button type="button" onClick={() => setDesktopCropMode("manual")}
-                    className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${desktopCropMode === "manual" ? "border-ink bg-ink text-offwhite" : "border-ink/20 text-ink/60 hover:border-ink"}`}>Manual</button>
-                </div>
-                {desktopCropMode === "manual" && (
-                  <>
-                    <div className="relative w-full max-w-xs aspect-square bg-ink/5 border border-ink/20">
-                      <Cropper image={imageFilePreviewUrl} crop={desktopCrop} zoom={desktopZoom} aspect={1}
-                        onCropChange={setDesktopCrop} onZoomChange={setDesktopZoom}
-                        onCropComplete={(a) => setDesktopCroppedArea(a)} showGrid />
-                    </div>
-                    <input type="range" min={1} max={3} step={0.01} value={desktopZoom}
-                      onChange={(e) => setDesktopZoom(Number(e.target.value))} className="w-full max-w-xs mt-3" />
-                  </>
-                )}
+              <div className="relative w-full max-w-xs aspect-[3/4] bg-ink/5 border border-ink/20 overflow-hidden">
+                <img
+                  src={imageFilePreviewUrl}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: desktopFocal }}
+                />
               </div>
-              <div>
-                <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">Mobile Crop</label>
-                <div className="flex gap-3 mb-3">
-                  <button type="button" onClick={() => setMobileCropMode("auto")}
-                    className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${mobileCropMode === "auto" ? "border-ink bg-ink text-offwhite" : "border-ink/20 text-ink/60 hover:border-ink"}`}>Auto</button>
-                  <button type="button" onClick={() => setMobileCropMode("manual")}
-                    className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${mobileCropMode === "manual" ? "border-ink bg-ink text-offwhite" : "border-ink/20 text-ink/60 hover:border-ink"}`}>Manual</button>
-                </div>
-                {mobileCropMode === "manual" && (
-                  <>
-                    <div className="relative w-full max-w-xs aspect-[9/16] bg-ink/5 border border-ink/20">
-                      <Cropper image={imageFilePreviewUrl} crop={mobileCrop} zoom={mobileZoom} aspect={9 / 16}
-                        onCropChange={setMobileCrop} onZoomChange={setMobileZoom}
-                        onCropComplete={(a) => setMobileCroppedArea(a)} showGrid />
-                    </div>
-                    <input type="range" min={1} max={3} step={0.01} value={mobileZoom}
-                      onChange={(e) => setMobileZoom(Number(e.target.value))} className="w-full max-w-xs mt-3" />
-                  </>
-                )}
+              <div className="flex gap-8 flex-wrap">
+                <FocalPointPicker
+                  label="Desktop Focus"
+                  value={desktopFocal}
+                  onChange={setDesktopFocal}
+                />
+                <FocalPointPicker
+                  label="Mobile Focus"
+                  value={mobileFocal}
+                  onChange={setMobileFocal}
+                />
               </div>
             </div>
           )}
-          <input type="text" value={imageForm.altText}
-            onChange={(e) => setImageForm({ ...imageForm, altText: e.target.value })}
-            placeholder="Alt text" className="w-full border border-ink/20 px-4 py-2 text-sm" />
-          <input type="number" value={imageForm.position}
-            onChange={(e) => setImageForm({ ...imageForm, position: e.target.value })}
-            placeholder="Position" className="w-full border border-ink/20 px-4 py-2 text-sm" />
+          <input
+            type="text"
+            value={imageForm.altText}
+            onChange={(e) =>
+              setImageForm({ ...imageForm, altText: e.target.value })
+            }
+            placeholder="Alt text"
+            className="w-full border border-ink/20 px-4 py-2 text-sm"
+          />
+          <input
+            type="number"
+            value={imageForm.position}
+            onChange={(e) =>
+              setImageForm({ ...imageForm, position: e.target.value })
+            }
+            placeholder="Position"
+            className="w-full border border-ink/20 px-4 py-2 text-sm"
+          />
           <div className="flex gap-3">
-            <button type="button" onClick={() => setCreateStep(2)}
-              className="text-sm uppercase tracking-[0.15em] text-ink/60 hover:text-ink transition-colors cursor-pointer">
+            <button
+              type="button"
+              onClick={() => setCreateStep(2)}
+              className="text-sm uppercase tracking-[0.15em] text-ink/60 hover:text-ink transition-colors cursor-pointer"
+            >
               ← Back
             </button>
-            <button type="submit" disabled={saving || !imageFile}
-              className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
+            <button
+              type="submit"
+              disabled={saving || !imageFile}
+              className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
               {saving ? "Creating..." : "Create Product"}
             </button>
           </div>
@@ -718,41 +863,53 @@ if (loading && view === "list") {
               onSubmit={handleAddVariant}
               className="flex flex-col sm:flex-row gap-3 border border-ink/10 p-3"
             >
-              <input
-                type="text"
+              <select
                 value={variantForm.size}
-                onChange={(e) =>
-                  setVariantForm({ ...variantForm, size: e.target.value })
-                }
-                placeholder="Size"
-                className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-20"
+                onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value, customSize: "" })}
+                className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24 bg-offwhite"
                 required
-              />
+              >
+                {SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              {variantForm.size === "Custom" && (
+                <input
+                  type="text"
+                  value={variantForm.customSize || ""}
+                  onChange={(e) => setVariantForm({ ...variantForm, customSize: e.target.value })}
+                  placeholder="Enter size"
+                  className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
+                  required
+                />
+              )}
               <input
                 type="text"
                 value={variantForm.color}
-                onChange={(e) =>
-                  setVariantForm({ ...variantForm, color: e.target.value })
-                }
+                onChange={(e) => setVariantForm({ ...variantForm, color: e.target.value })}
                 placeholder="Color"
                 className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
               />
-              <input
-                type="text"
-                value={variantForm.sku}
-                onChange={(e) =>
-                  setVariantForm({ ...variantForm, sku: e.target.value })
-                }
-                placeholder="SKU"
-                className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-32"
-                required
-              />
+              <div className="flex gap-1 items-center">
+                <input
+                  type="text"
+                  value={variantForm.sku}
+                  onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
+                  placeholder="SKU"
+                  className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-28"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setVariantForm({ ...variantForm, sku: generateSKU(activeProduct?.name || form.name, variantForm.size === "Custom" ? variantForm.customSize : variantForm.size, variantForm.color) })}
+                  className="border border-ink/20 px-2 py-1 text-xs text-ink/60 hover:border-ink hover:text-ink transition-colors cursor-pointer whitespace-nowrap"
+                  title="Auto-generate SKU"
+                >
+                  Gen
+                </button>
+              </div>
               <input
                 type="number"
                 value={variantForm.stock}
-                onChange={(e) =>
-                  setVariantForm({ ...variantForm, stock: e.target.value })
-                }
+                onChange={(e) => setVariantForm({ ...variantForm, stock: e.target.value })}
                 placeholder="Stock"
                 className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-20"
               />
@@ -822,120 +979,25 @@ if (loading && view === "list") {
               />
               {imageFilePreviewUrl && (
                 <div className="space-y-6">
-                  {/* Desktop crop */}
-                  <div>
-                    <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-                      Desktop Crop
-                    </label>
-                    <div className="flex gap-3 mb-3">
-                      <button
-                        type="button"
-                        onClick={() => setDesktopCropMode("auto")}
-                        className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                          desktopCropMode === "auto"
-                            ? "border-ink bg-ink text-offwhite"
-                            : "border-ink/20 text-ink/60 hover:border-ink"
-                        }`}
-                      >
-                        Auto
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDesktopCropMode("manual")}
-                        className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                          desktopCropMode === "manual"
-                            ? "border-ink bg-ink text-offwhite"
-                            : "border-ink/20 text-ink/60 hover:border-ink"
-                        }`}
-                      >
-                        Manual
-                      </button>
-                    </div>
-                    {desktopCropMode === "manual" && (
-                      <>
-                        <div className="relative w-full max-w-xs aspect-square bg-ink/5 border border-ink/20">
-                          <Cropper
-                            image={imageFilePreviewUrl}
-                            crop={desktopCrop}
-                            zoom={desktopZoom}
-                            aspect={1}
-                            onCropChange={setDesktopCrop}
-                            onZoomChange={setDesktopZoom}
-                            onCropComplete={(croppedAreaPercent) =>
-                              setDesktopCroppedArea(croppedAreaPercent)
-                            }
-                            showGrid
-                          />
-                        </div>
-                        <input
-                          type="range"
-                          min={1}
-                          max={3}
-                          step={0.01}
-                          value={desktopZoom}
-                          onChange={(e) => setDesktopZoom(Number(e.target.value))}
-                          className="w-full max-w-xs mt-3"
-                        />
-                      </>
-                    )}
+                  <div className="relative w-full max-w-xs aspect-[3/4] bg-ink/5 border border-ink/20 overflow-hidden">
+                    <img
+                      src={imageFilePreviewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      style={{ objectPosition: desktopFocal }}
+                    />
                   </div>
-
-                  {/* Mobile crop */}
-                  <div>
-                    <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-                      Mobile Crop
-                    </label>
-                    <div className="flex gap-3 mb-3">
-                      <button
-                        type="button"
-                        onClick={() => setMobileCropMode("auto")}
-                        className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                          mobileCropMode === "auto"
-                            ? "border-ink bg-ink text-offwhite"
-                            : "border-ink/20 text-ink/60 hover:border-ink"
-                        }`}
-                      >
-                        Auto
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMobileCropMode("manual")}
-                        className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                          mobileCropMode === "manual"
-                            ? "border-ink bg-ink text-offwhite"
-                            : "border-ink/20 text-ink/60 hover:border-ink"
-                        }`}
-                      >
-                        Manual
-                      </button>
-                    </div>
-                    {mobileCropMode === "manual" && (
-                      <>
-                        <div className="relative w-full max-w-xs aspect-[9/16] bg-ink/5 border border-ink/20">
-                          <Cropper
-                            image={imageFilePreviewUrl}
-                            crop={mobileCrop}
-                            zoom={mobileZoom}
-                            aspect={9 / 16}
-                            onCropChange={setMobileCrop}
-                            onZoomChange={setMobileZoom}
-                            onCropComplete={(croppedAreaPercent) =>
-                              setMobileCroppedArea(croppedAreaPercent)
-                            }
-                            showGrid
-                          />
-                        </div>
-                        <input
-                          type="range"
-                          min={1}
-                          max={3}
-                          step={0.01}
-                          value={mobileZoom}
-                          onChange={(e) => setMobileZoom(Number(e.target.value))}
-                          className="w-full max-w-xs mt-3"
-                        />
-                      </>
-                    )}
+                  <div className="flex gap-8 flex-wrap">
+                    <FocalPointPicker
+                      label="Desktop Focus"
+                      value={desktopFocal}
+                      onChange={setDesktopFocal}
+                    />
+                    <FocalPointPicker
+                      label="Mobile Focus"
+                      value={mobileFocal}
+                      onChange={setMobileFocal}
+                    />
                   </div>
                 </div>
               )}

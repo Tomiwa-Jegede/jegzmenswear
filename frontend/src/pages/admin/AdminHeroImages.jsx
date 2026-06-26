@@ -1,9 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import Cropper from "react-easy-crop";
+import { useToast } from "../../context/ToastContext";
 import api from "../../lib/axios";
 import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import Skeleton from "../../components/ui/Skeleton";
+
+const FOCAL_OPTIONS = [
+  ["left top", "center top", "right top"],
+  ["left center", "center center", "right center"],
+  ["left bottom", "center bottom", "right bottom"],
+];
+
+function FocalPointPicker({ label, value, onChange }) {
+  const current = value || "center center";
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">{label}</p>
+      <div className="grid grid-cols-3 gap-1 w-28">
+        {FOCAL_OPTIONS.flat().map((v) => (
+          <button key={v} type="button" onClick={() => onChange(v)} title={v}
+            className={`h-8 w-8 border flex items-center justify-center transition-colors cursor-pointer ${current === v ? "border-ink bg-ink" : "border-ink/20 hover:border-ink"}`}>
+            <span className={`block w-2 h-2 rounded-full ${current === v ? "bg-offwhite" : "bg-ink/40"}`} />
+          </button>
+        ))}
+      </div>
+      <p className="text-[10px] text-ink/40 mt-1">{current}</p>
+    </div>
+  );
+}
 
 function AdminHeroImages() {
   const [images, setImages] = useState([]);
@@ -12,18 +36,10 @@ function AdminHeroImages() {
   const [filePreviewUrl, setFilePreviewUrl] = useState(null);
   const [altText, setAltText] = useState("");
   const [position, setPosition] = useState(0);
-  const [desktopCropMode, setDesktopCropMode] = useState("auto");
-  const [desktopCrop, setDesktopCrop] = useState({ x: 0, y: 0 });
-  const [desktopZoom, setDesktopZoom] = useState(1);
-  const [desktopCroppedArea, setDesktopCroppedArea] = useState({ x: 0, y: 0, width: 100, height: 100 });
-
-  const [mobileCropMode, setMobileCropMode] = useState("auto");
-  const [mobileCrop, setMobileCrop] = useState({ x: 0, y: 0 });
-  const [mobileZoom, setMobileZoom] = useState(1);
-  const [mobileCroppedArea, setMobileCroppedArea] = useState({ x: 0, y: 0, width: 100, height: 100 });
-
+  const [desktopFocal, setDesktopFocal] = useState("center center");
+  const [mobileFocal, setMobileFocal] = useState("center center");
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
+  const { showToast } = useToast();
   const [editingImage, setEditingImage] = useState(null);
 
   function resetForm() {
@@ -33,16 +49,9 @@ function AdminHeroImages() {
     setFilePreviewUrl(null);
     setAltText("");
     setPosition(0);
-    setDesktopCropMode("auto");
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(1);
-    setDesktopCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
-    setMobileCropMode("auto");
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(1);
-    setMobileCroppedArea({ x: 0, y: 0, width: 100, height: 100 });
-    setError("");
-  }
+    setDesktopFocal("center center");
+    setMobileFocal("center center");
+    }
 
   function handleEdit(img) {
     setEditingImage(img);
@@ -51,31 +60,14 @@ function AdminHeroImages() {
     setFilePreviewUrl(img.url);
     setAltText(img.altText || "");
     setPosition(img.position);
-    setDesktopCropMode(img.desktopCropMode || "auto");
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(img.desktopZoom || 1);
-    setDesktopCroppedArea({
-      x: img.desktopCropX ?? 0,
-      y: img.desktopCropY ?? 0,
-      width: img.desktopCropWidth ?? 100,
-      height: img.desktopCropHeight ?? 100,
-    });
-    setMobileCropMode(img.mobileCropMode || "auto");
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(img.mobileZoom || 1);
-    setMobileCroppedArea({
-      x: img.mobileCropX ?? 0,
-      y: img.mobileCropY ?? 0,
-      width: img.mobileCropWidth ?? 100,
-      height: img.mobileCropHeight ?? 100,
-    });
-    setError("");
+    setDesktopFocal(img.desktopCropMode && img.desktopCropMode !== "auto" && img.desktopCropMode !== "manual" ? img.desktopCropMode : "center center");
+    setMobileFocal(img.mobileCropMode && img.mobileCropMode !== "auto" && img.mobileCropMode !== "manual" ? img.mobileCropMode : "center center");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const usedPositions = useMemo(
     () => images.map((img) => img.position),
-    [images]
+    [images],
   );
 
   const maxSlot = useMemo(() => {
@@ -85,16 +77,12 @@ function AdminHeroImages() {
 
   const positionSlots = useMemo(
     () => Array.from({ length: maxSlot + 1 }, (_, i) => i),
-    [maxSlot]
+    [maxSlot],
   );
 
   function handleFileChange(e) {
     const selected = e.target.files[0];
     setFile(selected);
-    setDesktopCrop({ x: 0, y: 0 });
-    setDesktopZoom(1);
-    setMobileCrop({ x: 0, y: 0 });
-    setMobileZoom(1);
     if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
     setFilePreviewUrl(selected ? URL.createObjectURL(selected) : null);
   }
@@ -113,32 +101,19 @@ function AdminHeroImages() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    console.log("handleSubmit fired", { editingImage, file });
     if (!editingImage && !file) return;
-    setError("");
     setUploading(true);
     try {
       const payload = {
         altText,
         position: Number(position),
-        desktopCropMode,
-        desktopCropX: desktopCroppedArea.x,
-        desktopCropY: desktopCroppedArea.y,
-        desktopCropWidth: desktopCroppedArea.width,
-        desktopCropHeight: desktopCroppedArea.height,
-        desktopZoom,
-        mobileCropMode,
-        mobileCropX: mobileCroppedArea.x,
-        mobileCropY: mobileCroppedArea.y,
-        mobileCropWidth: mobileCroppedArea.width,
-        mobileCropHeight: mobileCroppedArea.height,
-        mobileZoom,
+        desktopCropMode: desktopFocal,
+        mobileCropMode: mobileFocal,
       };
       if (editingImage) {
         if (file) {
           payload.url = await uploadImageToCloudinary(file);
         }
-        console.log("firing PUT", editingImage.id, payload);
         await api.put(`/hero-images/${editingImage.id}`, payload);
       } else {
         payload.url = await uploadImageToCloudinary(file);
@@ -147,7 +122,7 @@ function AdminHeroImages() {
       resetForm();
       loadImages();
     } catch (err) {
-      setError(err.response?.data?.error || "Upload failed");
+      showToast("Something went wrong. The image could not be saved. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -204,7 +179,7 @@ function AdminHeroImages() {
         onSubmit={handleSubmit}
         className="border border-ink/10 p-6 mb-10 space-y-4"
       >
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        
         <div>
           <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
             Image File
@@ -233,120 +208,12 @@ function AdminHeroImages() {
 
         {filePreviewUrl && (
           <div className="space-y-6">
-            {/* Desktop crop */}
-            <div>
-              <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-                Desktop Crop
-              </label>
-              <div className="flex gap-3 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setDesktopCropMode("auto")}
-                  className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    desktopCropMode === "auto"
-                      ? "border-ink bg-ink text-offwhite"
-                      : "border-ink/20 text-ink/60 hover:border-ink"
-                  }`}
-                >
-                  Auto
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDesktopCropMode("manual")}
-                  className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    desktopCropMode === "manual"
-                      ? "border-ink bg-ink text-offwhite"
-                      : "border-ink/20 text-ink/60 hover:border-ink"
-                  }`}
-                >
-                  Manual
-                </button>
-              </div>
-              {desktopCropMode === "manual" && (
-                <>
-                  <div className="relative w-full max-w-xs aspect-square bg-ink/5 border border-ink/20">
-                    <Cropper
-                      image={filePreviewUrl}
-                      crop={desktopCrop}
-                      zoom={desktopZoom}
-                      aspect={1}
-                      onCropChange={setDesktopCrop}
-                      onZoomChange={setDesktopZoom}
-                      onCropComplete={(croppedAreaPercent) =>
-                        setDesktopCroppedArea(croppedAreaPercent)
-                      }
-                      showGrid
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={3}
-                    step={0.01}
-                    value={desktopZoom}
-                    onChange={(e) => setDesktopZoom(Number(e.target.value))}
-                    className="w-full max-w-xs mt-3"
-                  />
-                </>
-              )}
+            <div className="relative w-full max-w-xs aspect-[3/4] bg-ink/5 border border-ink/20 overflow-hidden">
+              <img src={filePreviewUrl} alt="Preview" className="w-full h-full object-cover" style={{ objectPosition: desktopFocal }} />
             </div>
-
-            {/* Mobile crop */}
-            <div>
-              <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-                Mobile Crop
-              </label>
-              <div className="flex gap-3 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setMobileCropMode("auto")}
-                  className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    mobileCropMode === "auto"
-                      ? "border-ink bg-ink text-offwhite"
-                      : "border-ink/20 text-ink/60 hover:border-ink"
-                  }`}
-                >
-                  Auto
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMobileCropMode("manual")}
-                  className={`px-4 py-2 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    mobileCropMode === "manual"
-                      ? "border-ink bg-ink text-offwhite"
-                      : "border-ink/20 text-ink/60 hover:border-ink"
-                  }`}
-                >
-                  Manual
-                </button>
-              </div>
-              {mobileCropMode === "manual" && (
-                <>
-                  <div className="relative w-full max-w-xs aspect-[9/16] bg-ink/5 border border-ink/20">
-                    <Cropper
-                      image={filePreviewUrl}
-                      crop={mobileCrop}
-                      zoom={mobileZoom}
-                      aspect={9 / 16}
-                      onCropChange={setMobileCrop}
-                      onZoomChange={setMobileZoom}
-                      onCropComplete={(croppedAreaPercent) =>
-                        setMobileCroppedArea(croppedAreaPercent)
-                      }
-                      showGrid
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={3}
-                    step={0.01}
-                    value={mobileZoom}
-                    onChange={(e) => setMobileZoom(Number(e.target.value))}
-                    className="w-full max-w-xs mt-3"
-                  />
-                </>
-              )}
+            <div className="flex gap-8 flex-wrap">
+              <FocalPointPicker label="Desktop Focus" value={desktopFocal} onChange={setDesktopFocal} />
+              <FocalPointPicker label="Mobile Focus" value={mobileFocal} onChange={setMobileFocal} />
             </div>
           </div>
         )}
@@ -369,7 +236,9 @@ function AdminHeroImages() {
           </label>
           <div className="flex flex-wrap gap-2">
             {positionSlots.map((slot) => {
-              const isTaken = usedPositions.includes(slot) && (!editingImage || slot !== editingImage.position);
+              const isTaken =
+                usedPositions.includes(slot) &&
+                (!editingImage || slot !== editingImage.position);
               const isSelected = Number(position) === slot;
               return (
                 <button
@@ -397,7 +266,11 @@ function AdminHeroImages() {
             disabled={uploading}
             className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            {uploading ? "Saving..." : editingImage ? "Save Changes" : "Upload Image"}
+            {uploading
+              ? "Saving..."
+              : editingImage
+                ? "Save Changes"
+                : "Upload Image"}
           </button>
           {(file || editingImage) && (
             <button
