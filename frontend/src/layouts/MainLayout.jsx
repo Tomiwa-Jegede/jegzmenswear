@@ -189,7 +189,7 @@ function MainLayout() {
             className="relative flex items-center justify-center"
             style={{ perspective: "500px" }}
           >
-            <div className="star-ring" aria-hidden="true">
+            {/* <div className="star-ring" aria-hidden="true">
               <span className="star text-[#D4AF37]" style={{ "--i": 0 }}>
                 ✦
               </span>
@@ -208,7 +208,7 @@ function MainLayout() {
               <span className="star text-[#D4AF37]" style={{ "--i": 5 }}>
                 ✦
               </span>
-            </div>
+            </div> */}
             <Link to="/" className="relative z-10 flex items-center">
               <img
                 src={scrolled ? onfleekLogoDark : onfleekLogoWhite}

@@ -47,7 +47,7 @@ function Shop() {
     <div className="px-6 py-12">
       <h1 className="font-serif text-4xl text-ink mb-10">Shop</h1>
 
-      <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-10">
+      {/* <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-10">
         <div className="flex-1">
           <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
             Search
@@ -101,7 +101,7 @@ function Shop() {
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {!loading && products.length === 0 && (
         <p className="text-ink/60">No products found.</p>
