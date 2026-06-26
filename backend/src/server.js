@@ -13,13 +13,22 @@ const siteContentRouter = require("./routes/siteContent");
 
 const app = express();
 
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(",").map((u) => u.trim())
+  : [];
+
 const corsOptions =
   process.env.NODE_ENV === "production"
-    ? { origin: process.env.CLIENT_URL }
+    ? {
+        origin: (origin, callback) => {
+          if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+          }
+          callback(new Error("Not allowed by CORS"));
+        },
+      }
     : {
         origin: (origin, callback) => {
-          // Allow any localhost port in development (Vite auto-bumps ports
-          // when the default is already in use).
           if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
             return callback(null, true);
           }
