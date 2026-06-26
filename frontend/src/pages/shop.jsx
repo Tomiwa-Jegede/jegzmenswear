@@ -3,7 +3,12 @@ import { Link } from "react-router-dom";
 import api from "../lib/axios";
 import Skeleton from "../components/ui/Skeleton";
 
-function getCropTransform({ cropX = 0, cropY = 0, cropWidth = 100, cropHeight = 100 } = {}) {
+function getCropTransform({
+  cropX = 0,
+  cropY = 0,
+  cropWidth = 100,
+  cropHeight = 100,
+} = {}) {
   const scaleX = 100 / cropWidth;
   const scaleY = 100 / cropHeight;
   return {
