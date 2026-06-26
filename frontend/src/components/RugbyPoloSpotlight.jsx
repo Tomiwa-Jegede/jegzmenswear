@@ -105,7 +105,7 @@ function RugbyPoloSpotlight() {
         >
           {collection.heroImageUrl && (
             <>
-              <img
+              <FadeImage
                 src={collection.heroImageUrl}
                 alt={collection.altText || collection.name}
                 style={getCropTransform({
@@ -116,7 +116,7 @@ function RugbyPoloSpotlight() {
                 })}
                 className="absolute inset-0 h-full w-full sm:hidden"
               />
-              <img
+              <FadeImage
                 src={collection.heroImageUrl}
                 alt={collection.altText || collection.name}
                 style={getCropTransform({

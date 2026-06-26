@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../lib/axios";
 import Skeleton from "../components/ui/Skeleton";
+import FadeImage from "../components/FadeImage";
 
 function getCropTransform({
   cropX = 0,
@@ -131,7 +132,7 @@ function Shop() {
                   <div className="bg-cream aspect-[3/4] overflow-hidden mb-3 relative">
                     {p.images[0] && (
                       <>
-                        <img
+                        <FadeImage
                           src={p.images[0].url}
                           alt={p.images[0].altText || p.name}
                           className="absolute inset-0 h-full w-full sm:hidden group-hover:scale-105 transition-transform duration-500"
@@ -142,7 +143,7 @@ function Shop() {
                             cropHeight: p.images[0].mobileCropHeight,
                           })}
                         />
-                        <img
+                        <FadeImage
                           src={p.images[0].url}
                           alt={p.images[0].altText || p.name}
                           className="absolute inset-0 h-full w-full hidden sm:block group-hover:scale-105 transition-transform duration-500"
