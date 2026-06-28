@@ -176,13 +176,9 @@ function MusicPlayer() {
       >
         <div
           style={{
-            width: window.innerWidth < 640 ? 90 : 150,
-            aspectRatio: "1 / 1",
+            width: window.innerWidth < 640 ? 100 : 160,
             position: "relative",
             pointerEvents: "none",
-            borderRadius: "20px 20px 0 0",
-            overflow: "hidden",
-        
           }}
         >
           <img
@@ -193,11 +189,11 @@ function MusicPlayer() {
               width: "100%",
               height: "auto",
               display: "block",
-              position: "absolute",
-              top: 0,
-              left: 0,
               opacity: activeSlot === 0 ? 1 : 0,
               transition: "opacity 220ms ease-in-out",
+              position: activeSlot === 0 ? "relative" : "absolute",
+              bottom: 0,
+              right: 0,
             }}
           />
           <img
@@ -208,11 +204,11 @@ function MusicPlayer() {
               width: "100%",
               height: "auto",
               display: "block",
-              position: "absolute",
-              top: 0,
-              left: 0,
               opacity: activeSlot === 1 ? 1 : 0,
               transition: "opacity 220ms ease-in-out",
+              position: activeSlot === 1 ? "relative" : "absolute",
+              bottom: 0,
+              right: 0,
             }}
           />
         </div>
