@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import api from "../lib/axios";
 import stickerUp from "../assets/onfleekStickerUp.png";
 import stickerNormal from "../assets/onfleekSticker.png";
 import stickerDown from "../assets/onfleekStickerDown.png";
 
-
-// Cycle order: up → normal → down → normal → (repeats)
 const STICKER_SEQUENCE = [stickerUp, stickerNormal, stickerDown, stickerNormal];
+const MOBILE_SIZE = 100;
+const DESKTOP_SIZE = 160;
 
-// Module-level singletons — survive StrictMode double-invoke
 let _audioContext = null;
 let _analyser = null;
 let _source = null;
@@ -16,21 +15,36 @@ let _audioEl = null;
 
 function MusicPlayer() {
   const [track, setTrack] = useState(null);
-  const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [size, setSize] = useState(
+    window.innerWidth < 640 ? MOBILE_SIZE : DESKTOP_SIZE,
+  );
 
-  const [slotSrcs, setSlotSrcs] = useState([
-    STICKER_SEQUENCE[1],
-    STICKER_SEQUENCE[1],
-  ]);
-  const [activeSlot, setActiveSlot] = useState(0);
+  // Single canvas-style ref for sticker frame — no state batching issues
+  const img0Ref = useRef(null);
+  const img1Ref = useRef(null);
+  const activeSlotRef = useRef(0);
   const stepIndexRef = useRef(1);
-
+  const animFrameRef = useRef(null);
   const audioRef = useRef(null);
   const analyserRef = useRef(null);
-  const animFrameRef = useRef(null);
+  const mutedRef = useRef(true);
+  const playingRef = useRef(false);
 
-  // Fetch active track
+  // Keep refs in sync with state
+  mutedRef.current = muted;
+  playingRef.current = playing;
+
+  // Responsive size
+  useEffect(() => {
+    const onResize = () =>
+      setSize(window.innerWidth < 640 ? MOBILE_SIZE : DESKTOP_SIZE);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Fetch track
   useEffect(() => {
     api
       .get("/music")
@@ -40,65 +54,52 @@ function MusicPlayer() {
       .catch(() => {});
   }, []);
 
-  // Auto-play immediately muted — browser allows muted autoplay
-  useEffect(() => {
-    if (!track || !audioRef.current) return;
-    audioRef.current.muted = true;
-    audioRef.current
-      .play()
-      .then(() => setPlaying(true))
-      .catch(() => {});
-  }, [track]);
-
-  // Set up Web Audio API analyser
+  // Set up audio + analyser + autoplay — single effect, correct order
   useEffect(() => {
     if (!track || !audioRef.current) return;
     const audio = audioRef.current;
 
-    if (_audioEl === audio) {
-      analyserRef.current = _analyser;
-      return;
+    // Set up analyser only once per audio element
+    if (_audioEl !== audio) {
+      if (_audioContext) {
+        _audioContext.close();
+        _audioContext = null;
+        _analyser = null;
+        _source = null;
+        _audioEl = null;
+      }
+
+      const context = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 64;
+      const source = context.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(context.destination);
+
+      _audioContext = context;
+      _analyser = analyser;
+      _source = source;
+      _audioEl = audio;
     }
 
-    if (_audioContext) {
-      _audioContext.close();
-      _audioContext = null;
-      _analyser = null;
-      _source = null;
-      _audioEl = null;
-    }
+    analyserRef.current = _analyser;
 
-    const context = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = context.createAnalyser();
-    analyser.fftSize = 64;
-    const source = context.createMediaElementSource(audio);
+    // Autoplay muted
+    audio.muted = true;
+    audio
+      .play()
+      .then(() => {
+        setPlaying(true);
+        playingRef.current = true;
+      })
+      .catch(() => {});
 
-    source.connect(analyser);
-    analyser.connect(context.destination);
-
-    _audioContext = context;
-    _analyser = analyser;
-    _source = source;
-    _audioEl = audio;
-    analyserRef.current = analyser;
-
-    return () => {
-      cancelAnimationFrame(animFrameRef.current);
-    };
+    return () => cancelAnimationFrame(animFrameRef.current);
   }, [track]);
 
-  // Continuous sticker cycling driven by bass level
+  // Sticker animation — single persistent loop, reads refs not state
   useEffect(() => {
-    if (!playing || muted || !analyserRef.current) {
-      stepIndexRef.current = 1;
-      setSlotSrcs((prev) => {
-        const copy = [...prev];
-        copy[activeSlot] = STICKER_SEQUENCE[1];
-        return copy;
-      });
-      cancelAnimationFrame(animFrameRef.current);
-      return;
-    }
+    if (!analyserRef.current) return;
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     const MIN_RATE = 0.02;
@@ -107,6 +108,27 @@ function MusicPlayer() {
     let lastTime = performance.now();
 
     const tick = () => {
+      animFrameRef.current = requestAnimationFrame(tick);
+
+      // Only animate when playing and unmuted
+      if (!playingRef.current || mutedRef.current) {
+        // Show normal sticker when paused/muted
+        if (img0Ref.current && img1Ref.current) {
+          const activeSlot = activeSlotRef.current;
+          const normalSrc = STICKER_SEQUENCE[1];
+          if (activeSlot === 0) {
+            img0Ref.current.src = normalSrc;
+            img0Ref.current.style.opacity = "1";
+            img1Ref.current.style.opacity = "0";
+          } else {
+            img1Ref.current.src = normalSrc;
+            img1Ref.current.style.opacity = "1";
+            img0Ref.current.style.opacity = "0";
+          }
+        }
+        return;
+      }
+
       analyserRef.current.getByteFrequencyData(dataArray);
       const bass = (dataArray[0] + dataArray[1] + dataArray[2]) / 3;
       const normalized = Math.min(bass / 180, 1);
@@ -120,48 +142,59 @@ function MusicPlayer() {
       if (accumulator >= 1) {
         const steps = Math.floor(accumulator);
         accumulator -= steps;
+
         const nextIndex =
           (stepIndexRef.current + steps) % STICKER_SEQUENCE.length;
         stepIndexRef.current = nextIndex;
 
-        setActiveSlot((current) => {
-          const next = current === 0 ? 1 : 0;
-          setSlotSrcs((prev) => {
-            const copy = [...prev];
-            copy[next] = STICKER_SEQUENCE[nextIndex];
-            return copy;
-          });
-          return next;
-        });
-      }
+        const current = activeSlotRef.current;
+        const next = current === 0 ? 1 : 0;
 
-      animFrameRef.current = requestAnimationFrame(tick);
+        // Direct DOM manipulation — no React re-render, no batching issues
+        const nextImg = next === 0 ? img0Ref.current : img1Ref.current;
+        const currentImg = current === 0 ? img0Ref.current : img1Ref.current;
+
+        if (nextImg && currentImg) {
+          nextImg.src = STICKER_SEQUENCE[nextIndex];
+          nextImg.style.opacity = "1";
+          currentImg.style.opacity = "0";
+          activeSlotRef.current = next;
+        }
+      }
     };
 
     animFrameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [playing, muted]);
+  }, [track]); // only start once when track loads
 
-  const handleMuteToggle = async () => {
-    const next = !muted;
-    setMuted(next);
+  const handleMuteToggle = useCallback(async () => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    const next = !mutedRef.current;
+    setMuted(next);
+    mutedRef.current = next;
+
     if (!next) {
-      // Unmuting — resume context, unmute, ensure playing
+      // Unmuting
       if (_audioContext?.state === "suspended") {
         await _audioContext.resume();
       }
       audio.muted = false;
       if (audio.paused) {
-        await audio.play().then(() => setPlaying(true)).catch(() => {});
+        await audio.play().catch(() => {});
       }
+      analyserRef.current = _analyser;
+      setPlaying(true);
+      playingRef.current = true;
     } else {
+      // Muting
       audio.muted = true;
       audio.pause();
       setPlaying(false);
+      playingRef.current = false;
     }
-  };
+  }, []);
 
   if (!track) return null;
 
@@ -184,46 +217,44 @@ function MusicPlayer() {
           zIndex: 50,
           pointerEvents: "none",
           userSelect: "none",
+          width: size,
+          height: size,
         }}
       >
-        <div
+        <img
+          ref={img0Ref}
+          src={STICKER_SEQUENCE[1]}
+          alt="Onfleek character"
+          draggable={false}
           style={{
-            width: window.innerWidth < 640 ? 100 : 160,
-            position: "relative",
-            pointerEvents: "none",
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            objectPosition: "bottom right",
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            opacity: 1,
+            transition: "opacity 180ms ease-in-out",
           }}
-        >
-          <img
-            src={slotSrcs[0]}
-            alt="Onfleek character"
-            draggable={false}
-            style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
-              opacity: activeSlot === 0 ? 1 : 0,
-              transition: "opacity 220ms ease-in-out",
-              position: activeSlot === 0 ? "relative" : "absolute",
-              bottom: 0,
-              right: 0,
-            }}
-          />
-          <img
-            src={slotSrcs[1]}
-            alt=""
-            draggable={false}
-            style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
-              opacity: activeSlot === 1 ? 1 : 0,
-              transition: "opacity 220ms ease-in-out",
-              position: activeSlot === 1 ? "relative" : "absolute",
-              bottom: 0,
-              right: 0,
-            }}
-          />
-        </div>
+        />
+        <img
+          ref={img1Ref}
+          src={STICKER_SEQUENCE[1]}
+          alt=""
+          draggable={false}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            objectPosition: "bottom right",
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            opacity: 0,
+            transition: "opacity 180ms ease-in-out",
+          }}
+        />
       </div>
 
       {/* Music pill — fixed bottom-left */}
@@ -235,7 +266,6 @@ function MusicPlayer() {
           bottom: 0,
           left: 0,
           zIndex: 50,
-          pointerEvents: "all",
           background: "rgba(10,10,10,0.80)",
           backdropFilter: "blur(8px)",
           border: "none",
