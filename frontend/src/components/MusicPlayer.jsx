@@ -158,6 +158,8 @@ function MusicPlayer() {
       }
     } else {
       audio.muted = true;
+      audio.pause();
+      setPlaying(false);
     }
   };
 
