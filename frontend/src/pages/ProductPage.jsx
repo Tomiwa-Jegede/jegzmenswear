@@ -96,11 +96,7 @@ function ProductPage() {
   return (
     <div className="px-6 py-12 grid gap-10 md:grid-cols-2 max-w-5xl mx-auto">
       <div className="bg-cream aspect-[3/4] overflow-hidden relative">
-        {isFullyOutOfStock && (
-          <span className="absolute top-3 right-3 z-10 bg-ink text-offwhite text-xs uppercase tracking-[0.15em] px-3 py-1.5">
-            Sold Out
-          </span>
-        )}
+        
         {product.images[0] && (
           <>
             <FadeImage

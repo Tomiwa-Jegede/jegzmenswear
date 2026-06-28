@@ -196,8 +196,9 @@ function AdminProducts() {
 
   function handleAddPendingVariant(e) {
     e.preventDefault();
-    if (!variantForm.size || !variantForm.sku) return;
-    setPendingVariants((prev) => [...prev, { ...variantForm, id: Date.now() }]);
+    if (!variantForm.size) return;
+    const autoSku = generateSKU(form.name, variantForm.size === "Custom" ? variantForm.customSize : variantForm.size, variantForm.color);
+    setPendingVariants((prev) => [...prev, { ...variantForm, sku: autoSku, id: Date.now() }]);
     setVariantForm(emptyVariantForm);
   }
 
@@ -288,7 +289,7 @@ function AdminProducts() {
             ? variantForm.customSize || variantForm.size
             : variantForm.size,
         color: variantForm.color,
-        sku: variantForm.sku,
+        sku: generateSKU(activeProduct?.name || form.name, variantForm.size === "Custom" ? variantForm.customSize : variantForm.size, variantForm.color),
         stock: Number(variantForm.stock),
       });
       setVariantForm(emptyVariantForm);
@@ -645,7 +646,6 @@ function AdminProducts() {
                   >
                     <span className="text-ink">{v.size}</span>
                     {v.color && <span className="text-ink/50">{v.color}</span>}
-                    <span className="text-ink/50">{v.sku}</span>
                     <span className="text-ink/50">Stock: {v.stock}</span>
                     <button
                       type="button"
@@ -719,37 +719,7 @@ function AdminProducts() {
               placeholder="Color"
               className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
             />
-            <div className="flex gap-1 items-center">
-              <input
-                type="text"
-                value={variantForm.sku}
-                onChange={(e) =>
-                  setVariantForm({ ...variantForm, sku: e.target.value })
-                }
-                placeholder="SKU"
-                className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-28"
-                required
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setVariantForm({
-                    ...variantForm,
-                    sku: generateSKU(
-                      form.name,
-                      variantForm.size === "Custom"
-                        ? variantForm.customSize
-                        : variantForm.size,
-                      variantForm.color,
-                    ),
-                  })
-                }
-                className="border border-ink/20 px-2 py-1 text-xs text-ink/60 hover:border-ink hover:text-ink transition-colors cursor-pointer whitespace-nowrap"
-                title="Auto-generate SKU"
-              >
-                Gen
-              </button>
-            </div>
+            
             <input
               type="number"
               value={variantForm.stock}
@@ -924,15 +894,7 @@ function AdminProducts() {
                       placeholder="Color"
                       className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
                     />
-                    <input
-                      type="text"
-                      value={edit.sku || ""}
-                      onChange={(e) =>
-                        updateVariantEdit(v.id, "sku", e.target.value)
-                      }
-                      placeholder="SKU"
-                      className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-32"
-                    />
+                    
                     <input
                       type="number"
                       value={edit.stock ?? 0}
@@ -1006,37 +968,7 @@ function AdminProducts() {
                 placeholder="Color"
                 className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
               />
-              <div className="flex gap-1 items-center">
-                <input
-                  type="text"
-                  value={variantForm.sku}
-                  onChange={(e) =>
-                    setVariantForm({ ...variantForm, sku: e.target.value })
-                  }
-                  placeholder="SKU"
-                  className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-28"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setVariantForm({
-                      ...variantForm,
-                      sku: generateSKU(
-                        activeProduct?.name || form.name,
-                        variantForm.size === "Custom"
-                          ? variantForm.customSize
-                          : variantForm.size,
-                        variantForm.color,
-                      ),
-                    })
-                  }
-                  className="border border-ink/20 px-2 py-1 text-xs text-ink/60 hover:border-ink hover:text-ink transition-colors cursor-pointer whitespace-nowrap"
-                  title="Auto-generate SKU"
-                >
-                  Gen
-                </button>
-              </div>
+              
               <input
                 type="number"
                 value={variantForm.stock}
