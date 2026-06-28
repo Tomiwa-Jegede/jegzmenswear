@@ -89,6 +89,14 @@ function AdminHome() {
             Manage Spotlight
           </Link>
         </li>
+        <li>
+          <Link
+            to="/admin/music"
+            className="block border border-ink/10 px-6 py-4 text-sm uppercase tracking-[0.15em] text-ink hover:bg-ink hover:text-offwhite transition-colors"
+          >
+            Manage Music
+          </Link>
+        </li>
       </ul>
     </div>
   );

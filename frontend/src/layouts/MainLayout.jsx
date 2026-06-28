@@ -5,6 +5,7 @@ import ScrollToTop from "../components/ScrollToTop";
 import Hero from "../components/Hero";
 import api from "../lib/axios";
 import Footer from "../components/Footer";
+import MusicPlayer from "../components/MusicPlayer";
 import CartDrawer from "../components/CartDrawer";
 import MobileNav from "../components/MobileNav";
 import { useCart } from "../context/CartContext";
@@ -391,6 +392,7 @@ function MainLayout() {
         </>
       )}
       <CartDrawer />
+      <MusicPlayer />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import AdminCampaignImages from "./pages/admin/AdminCampaignImages";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCollections from "./pages/admin/AdminCollections";
 import AdminSiteContent from "./pages/admin/AdminSiteContent";
+import AdminMusic from "./pages/admin/AdminMusic";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 const router = createBrowserRouter([
   {
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
           { path: "products", element: <AdminProducts /> },
           { path: "collections", element: <AdminCollections /> },
           { path: "site-content", element: <AdminSiteContent /> },
+          { path: "music", element: <AdminMusic /> },
         ],
       },
     ],

@@ -135,6 +135,16 @@ model CampaignImage {
   updatedAt        DateTime @updatedAt
 }
 
+model Music {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  publicId  String
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model HeroImage {
   id               String   @id @default(cuid())
   url              String
