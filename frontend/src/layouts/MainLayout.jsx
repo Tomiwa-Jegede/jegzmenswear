@@ -5,6 +5,8 @@ import ScrollToTop from "../components/ScrollToTop";
 import Hero from "../components/Hero";
 import api from "../lib/axios";
 import Footer from "../components/Footer";
+import BreadcrumbTabs from "../components/BreadcrumbTabs";
+import EmailCapture from "../components/EmailCapture";
 import MusicPlayer from "../components/MusicPlayer";
 import CartDrawer from "../components/CartDrawer";
 import MobileNav from "../components/MobileNav";
@@ -19,6 +21,7 @@ import {
   IconLogIn,
   IconLogOut,
   IconBag,
+  IconInfo,
 } from "../components/icons";
 import { IconInstagram, IconTikTok, IconPinterest } from "../components/Footer";
 function MainLayout() {
@@ -27,6 +30,7 @@ function MainLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const isShop = location.pathname === "/shop";
   const headerRef = useRef(null);
   const [loaderVisible, setLoaderVisible] = useState(true);
 
@@ -149,7 +153,7 @@ function MainLayout() {
   }, []);
   if (maintenance === null) {
     return (
-      <div className="bg-offwhite min-h-screen">
+      <div className="bg-white min-h-screen">
         <PageLoader visible={true} />
       </div>
     );
@@ -158,7 +162,7 @@ function MainLayout() {
   const showMaintenance = maintenance && !isAuthenticated && !location.pathname.startsWith("/admin");
 
   return (
-    <div className={`bg-offwhite flex flex-col ${showMaintenance ? "h-screen overflow-hidden" : "min-h-screen"}`}>
+    <div className={`bg-white flex flex-col ${showMaintenance ? "h-screen overflow-hidden" : "min-h-screen"}`}>
       <ScrollToTop />
       <PageLoader visible={loaderVisible} />
       <style>{`
@@ -203,7 +207,7 @@ function MainLayout() {
       <header
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-30 px-6 py-5 sm:py-3 flex items-center justify-between transition-colors duration-300 ${
-          scrolled ? "bg-offwhite" : "bg-transparent"
+          scrolled ? "bg-white" : "bg-transparent"
         }`}
       >
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:left-auto sm:top-auto sm:translate-x-0 sm:translate-y-0">
@@ -235,7 +239,7 @@ function MainLayout() {
               <img
                 src={scrolled ? onfleekLogoDark : onfleekLogoWhite}
                 alt="Onfleek"
-                className="w-28 sm:w-48 h-auto transition-opacity duration-300"
+                className="w-52 sm:w-48 h-auto transition-opacity duration-300"
               />
             </Link>
           </div>
@@ -286,7 +290,7 @@ function MainLayout() {
           {!showMaintenance && (
           <button
             onClick={() => setIsOpen(true)}
-            aria-label="Bag"
+            aria-label="Cart"
             className={`relative transition-colors cursor-pointer p-1 ${
               scrolled
                 ? "text-ink hover:text-ink/70"
@@ -318,6 +322,13 @@ function MainLayout() {
             <IconTag className="h-3.5 w-3.5" />
             Shop
           </Link>}
+          {!showMaintenance && <Link
+            to="/info"
+            className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
+          >
+            <IconInfo className="h-3.5 w-3.5" />
+            Info
+          </Link>}
           {isAuthenticated ? (
             <Link
               to="/admin"
@@ -340,7 +351,7 @@ function MainLayout() {
             className="flex items-center gap-1.5 text-sm uppercase tracking-[0.2em] text-ink/70 hover:text-ink transition-colors cursor-pointer"
           >
             <IconBag className="h-4 w-4" />
-            Bag {itemCount > 0 && `(${itemCount})`}
+            Cart {itemCount > 0 && `(${itemCount})`}
           </button>}
           {isAuthenticated && (
             <button
@@ -383,12 +394,14 @@ function MainLayout() {
       ) : (
         <>
           <main
-            className="flex-1"
+            className={isHome ? "" : "flex-1"}
             style={{ paddingTop: isHome ? 0 : "var(--nav-height, 89px)" }}
           >
+            {!isHome && <BreadcrumbTabs />}
             <Outlet />
           </main>
-          <Footer />
+          {!isHome && !isShop && <Footer />}
+          {isShop && <EmailCapture />}
         </>
       )}
       <CartDrawer />

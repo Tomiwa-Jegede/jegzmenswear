@@ -42,7 +42,7 @@ function CartPage() {
   if (cart.items.length === 0) {
     return (
       <div className="px-6 py-20 text-center">
-        <h1 className="font-serif text-3xl text-ink mb-4">Your Bag is Empty</h1>
+        <h1 className="font-serif text-3xl text-ink mb-4">Your Cart is Empty</h1>
         <Link
           to="/"
           className="text-sm uppercase tracking-[0.2em] text-ink/60 hover:text-ink"
@@ -55,7 +55,7 @@ function CartPage() {
 
   return (
     <div className="px-6 py-12 max-w-3xl mx-auto">
-      <h1 className="font-serif text-4xl text-ink mb-10">Your Bag</h1>
+      <h1 className="font-serif text-4xl text-ink mb-10">Your Cart</h1>
 
       <div className="divide-y divide-ink/10">
         {cart.items.map((item) => (

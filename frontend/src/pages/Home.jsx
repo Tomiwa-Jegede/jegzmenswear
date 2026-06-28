@@ -20,10 +20,10 @@ function Home() {
   return (
     <>
       <Hero />
-      <FeaturedCollections collections={collections} />
-      <RugbyPoloSpotlight />
-      <CampaignEditorial />
-      <BrandPhilosophy />
+      {/* <FeaturedCollections collections={collections} /> */}
+      {/* <RugbyPoloSpotlight /> */}
+      {/* <CampaignEditorial /> */}
+      {/* <BrandPhilosophy /> */}
     </>
   );
 }

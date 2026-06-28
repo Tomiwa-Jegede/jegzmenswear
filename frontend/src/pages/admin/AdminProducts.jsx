@@ -52,15 +52,6 @@ function generateSKU(name, size, color) {
   return `${namePart}-${sizePart}-${colorPart}-${rand}`;
 }
 
-const emptyProductForm = {
-  name: "",
-  description: "",
-  price: "",
-  collectionId: "",
-  isFeatured: false,
-  isActive: true,
-};
-
 const emptyVariantForm = {
   size: "M",
   color: "",
@@ -69,7 +60,13 @@ const emptyVariantForm = {
   customSize: "",
 };
 const emptyImageForm = { altText: "", position: 0 };
-
+const emptyProductForm = {
+  name: "",
+  description: "",
+  price: "",
+  isFeatured: false,
+  isActive: true,
+};
 function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -79,6 +76,8 @@ function AdminProducts() {
   const [activeProduct, setActiveProduct] = useState(null); // full product record while editing
   const [form, setForm] = useState(emptyProductForm);
   const [variantForm, setVariantForm] = useState(emptyVariantForm);
+  const [selectedSizes, setSelectedSizes] = useState([]);
+  const [bulkStockValue, setBulkStockValue] = useState("");
   const [variantEdits, setVariantEdits] = useState({}); // { [variantId]: {size,color,sku,stock} }
   const [imageFile, setImageFile] = useState(null);
   const [imageForm, setImageForm] = useState(emptyImageForm);
@@ -131,7 +130,6 @@ function AdminProducts() {
         name: data.name,
         description: data.description || "",
         price: data.price,
-        collectionId: data.collectionId,
         isFeatured: data.isFeatured,
         isActive: data.isActive,
       });
@@ -177,7 +175,6 @@ function AdminProducts() {
           name: form.name,
           description: form.description,
           price: form.price,
-          collectionId: form.collectionId,
           isFeatured: form.isFeatured,
           isActive: form.isActive,
         };
@@ -204,6 +201,32 @@ function AdminProducts() {
     setVariantForm(emptyVariantForm);
   }
 
+  function toggleSizeSelection(size) {
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
+    );
+  }
+
+  function handleBulkAddSizes() {
+    if (selectedSizes.length === 0) return;
+    const newVariants = selectedSizes.map((size, i) => ({
+      size,
+      color: "",
+      sku: generateSKU(form.name, size, ""),
+      stock: 0,
+      id: Date.now() + i,
+    }));
+    setPendingVariants((prev) => [...prev, ...newVariants]);
+    setSelectedSizes([]);
+  }
+
+  function handleApplyStockToAll() {
+    if (bulkStockValue === "") return;
+    setPendingVariants((prev) =>
+      prev.map((v) => ({ ...v, stock: Number(bulkStockValue) })),
+    );
+  }
+
   function handleRemovePendingVariant(id) {
     setPendingVariants((prev) => prev.filter((v) => v.id !== id));
   }
@@ -218,7 +241,6 @@ function AdminProducts() {
         name: form.name,
         description: form.description,
         price: form.price,
-        collectionId: form.collectionId,
         isFeatured: form.isFeatured,
       });
       // 2. Create all pending variants
@@ -242,7 +264,9 @@ function AdminProducts() {
       // 4. Switch to edit mode for the completed product
       await startEdit(product.id);
     } catch (err) {
-      showToast("The product could not be created. Please check your details and try again.");
+      showToast(
+        "The product could not be created. Please check your details and try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -259,7 +283,10 @@ function AdminProducts() {
     if (!activeProduct) return;
     try {
       await api.post(`/products/${activeProduct.id}/variants`, {
-        size: variantForm.size === "Custom" ? (variantForm.customSize || variantForm.size) : variantForm.size,
+        size:
+          variantForm.size === "Custom"
+            ? variantForm.customSize || variantForm.size
+            : variantForm.size,
         color: variantForm.color,
         sku: variantForm.sku,
         stock: Number(variantForm.stock),
@@ -267,7 +294,9 @@ function AdminProducts() {
       setVariantForm(emptyVariantForm);
       await startEdit(activeProduct.id);
     } catch (err) {
-      showToast("The variant could not be added. Please check the details and try again.");
+      showToast(
+        "The variant could not be added. Please check the details and try again.",
+      );
     }
   }
 
@@ -399,7 +428,9 @@ function AdminProducts() {
                 <div className="flex-1">
                   <p className="text-sm text-ink">{p.name}</p>
                   <p className="text-xs text-ink/50">
-                    ₦{Number(p.price).toLocaleString()} · {p.isActive ? "Active" : "Inactive"}{p.isFeatured ? " · Featured" : ""}
+                    ₦{Number(p.price).toLocaleString()} ·{" "}
+                    {p.isActive ? "Active" : "Inactive"}
+                    {p.isFeatured ? " · Featured" : ""}
                   </p>
                   <p className="text-xs text-ink/40">{p.collection?.name}</p>
                 </div>
@@ -440,8 +471,6 @@ function AdminProducts() {
         {activeProduct ? "Edit Product" : "New Product"}
       </h1>
 
-      
-
       {/* ── Step indicator (create mode only) ── */}
       {!activeProduct && (
         <div className="flex items-center gap-3 mb-8">
@@ -464,9 +493,12 @@ function AdminProducts() {
           onSubmit={handleProductSubmit}
           className="border border-ink/10 p-6 mb-10 space-y-4"
         >
+          <p className="text-sm font-medium text-ink/80 -mb-1">
+            Product Details
+          </p>
           <div>
             <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-              Name
+              Name <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -489,67 +521,67 @@ function AdminProducts() {
               rows={3}
             />
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-                Price
-              </label>
+          <div>
+            <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+              Price <span className="text-red-600">*</span>
+            </label>
+            <div className="relative max-w-xs">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ink/40">
+                ₦
+              </span>
               <input
                 type="number"
                 step="0.01"
+                inputMode="decimal"
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
-                className="w-full border border-ink/20 px-4 py-2 text-sm"
+                className="w-full border border-ink/20 pl-8 pr-4 py-2 text-sm"
                 required
               />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-                Collection
-              </label>
-              <select
-                value={form.collectionId}
-                onChange={(e) =>
-                  setForm({ ...form, collectionId: e.target.value })
-                }
-                className="w-full border border-ink/20 px-4 py-2 text-sm bg-offwhite"
-                required
-              >
-                <option value="" disabled>
-                  Select collection
-                </option>
-                {collections.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                    {!c.isActive ? " (inactive)" : ""}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
-          <div className="flex flex-wrap gap-6">
-            <label className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-ink/60">
-              <input
-                type="checkbox"
-                checked={form.isFeatured}
-                onChange={(e) =>
-                  setForm({ ...form, isFeatured: e.target.checked })
-                }
-              />
-              Featured
-            </label>
-            {activeProduct && (
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">
+              Status
+            </p>
+            <div className="flex flex-wrap gap-6">
               <label className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-ink/60">
                 <input
                   type="checkbox"
-                  checked={form.isActive}
+                  checked={form.isFeatured}
                   onChange={(e) =>
-                    setForm({ ...form, isActive: e.target.checked })
+                    setForm({ ...form, isFeatured: e.target.checked })
                   }
                 />
-                Active
+                Featured
               </label>
-            )}
+              {activeProduct && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, isActive: true })}
+                    className={`px-4 py-1.5 text-xs uppercase tracking-[0.15em] rounded-full border transition-colors cursor-pointer ${
+                      form.isActive
+                        ? "bg-emerald-700 text-white border-emerald-700"
+                        : "border-ink/20 text-ink/50 hover:border-ink"
+                    }`}
+                  >
+                    Published
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, isActive: false })}
+                    className={`px-4 py-1.5 text-xs uppercase tracking-[0.15em] rounded-full border transition-colors cursor-pointer ${
+                      !form.isActive
+                        ? "bg-ink/80 text-white border-ink/80"
+                        : "border-ink/20 text-ink/50 hover:border-ink"
+                    }`}
+                  >
+                    Unpublished
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <button
             type="submit"
@@ -568,30 +600,81 @@ function AdminProducts() {
       {/* ── Step 2: Variants (create mode only — edit mode uses the section below) ── */}
       {!activeProduct && createStep === 2 && (
         <div className="border border-ink/10 p-6 mb-10 space-y-4">
+          <p className="text-sm font-medium text-ink/80 -mb-1">
+            Product Variation
+          </p>
           <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-2">
             Add at least one variant before continuing.
           </p>
-          {pendingVariants.length > 0 && (
-            <ul className="space-y-2 mb-4">
-              {pendingVariants.map((v) => (
-                <li
-                  key={v.id}
-                  className="flex items-center gap-3 border border-ink/10 p-2 text-sm"
+          <div className="border border-ink/10 p-4 space-y-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-ink/50">
+              Quick Add Sizes
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SIZES.filter((s) => s !== "Custom").map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => toggleSizeSelection(s)}
+                  className={`h-9 px-3 text-xs uppercase tracking-[0.1em] border rounded-full transition-colors cursor-pointer ${
+                    selectedSizes.includes(s)
+                      ? "bg-ink text-offwhite border-ink"
+                      : "border-ink/20 text-ink/60 hover:border-ink"
+                  }`}
                 >
-                  <span className="text-ink">{v.size}</span>
-                  {v.color && <span className="text-ink/50">{v.color}</span>}
-                  <span className="text-ink/50">{v.sku}</span>
-                  <span className="text-ink/50">Stock: {v.stock}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePendingVariant(v.id)}
-                    className="ml-auto text-xs uppercase tracking-[0.2em] text-red-600 hover:text-red-800 transition-colors cursor-pointer"
-                  >
-                    Remove
-                  </button>
-                </li>
+                  {s}
+                </button>
               ))}
-            </ul>
+            </div>
+            <button
+              type="button"
+              disabled={selectedSizes.length === 0}
+              onClick={handleBulkAddSizes}
+              className="bg-ink text-offwhite px-4 py-2 text-xs uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              Add Selected ({selectedSizes.length})
+            </button>
+          </div>
+          {pendingVariants.length > 0 && (
+            <>
+              <ul className="space-y-2 mb-2">
+                {pendingVariants.map((v) => (
+                  <li
+                    key={v.id}
+                    className="flex items-center gap-3 border border-ink/10 p-2 text-sm"
+                  >
+                    <span className="text-ink">{v.size}</span>
+                    {v.color && <span className="text-ink/50">{v.color}</span>}
+                    <span className="text-ink/50">{v.sku}</span>
+                    <span className="text-ink/50">Stock: {v.stock}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePendingVariant(v.id)}
+                      className="ml-auto text-xs uppercase tracking-[0.2em] text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={bulkStockValue}
+                  onChange={(e) => setBulkStockValue(e.target.value)}
+                  placeholder="Stock qty"
+                  className="border border-ink/20 px-2 py-1 text-sm w-24"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyStockToAll}
+                  className="text-xs uppercase tracking-[0.15em] text-ink/60 hover:text-ink border border-ink/20 hover:border-ink px-3 py-1.5 transition-colors cursor-pointer"
+                >
+                  Apply to all
+                </button>
+              </div>
+            </>
           )}
           <form
             onSubmit={handleAddPendingVariant}
@@ -709,21 +792,39 @@ function AdminProducts() {
           onSubmit={handleFinalCreate}
           className="border border-ink/10 p-6 mb-10 space-y-4"
         >
+          <p className="text-sm font-medium text-ink/80 -mb-1">
+            Add Product Image
+          </p>
           <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-2">
             Add at least one image to complete the product.
           </p>
           <label
             htmlFor="product-image-file"
-            className="flex flex-col items-center justify-center w-32 h-32 border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
+            className="flex flex-col items-center justify-center w-32 aspect-[4/5] border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
           >
             {imageFile ? (
               <span className="text-xs text-center px-2 break-all">
                 {imageFile.name}
               </span>
             ) : (
-              <span className="text-3xl font-light leading-none">+</span>
+              <span className="flex flex-col items-center gap-1">
+                <svg
+                  className="w-6 h-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path
+                    d="M12 19V5M5 12l7-7 7 7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
             )}
           </label>
+          <p className="text-[11px] text-ink/40">Recommended: 930 × 1163px</p>
           <input
             id="product-image-file"
             type="file"
@@ -865,17 +966,32 @@ function AdminProducts() {
             >
               <select
                 value={variantForm.size}
-                onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value, customSize: "" })}
+                onChange={(e) =>
+                  setVariantForm({
+                    ...variantForm,
+                    size: e.target.value,
+                    customSize: "",
+                  })
+                }
                 className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24 bg-offwhite"
                 required
               >
-                {SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+                {SIZES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
               {variantForm.size === "Custom" && (
                 <input
                   type="text"
                   value={variantForm.customSize || ""}
-                  onChange={(e) => setVariantForm({ ...variantForm, customSize: e.target.value })}
+                  onChange={(e) =>
+                    setVariantForm({
+                      ...variantForm,
+                      customSize: e.target.value,
+                    })
+                  }
                   placeholder="Enter size"
                   className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
                   required
@@ -884,7 +1000,9 @@ function AdminProducts() {
               <input
                 type="text"
                 value={variantForm.color}
-                onChange={(e) => setVariantForm({ ...variantForm, color: e.target.value })}
+                onChange={(e) =>
+                  setVariantForm({ ...variantForm, color: e.target.value })
+                }
                 placeholder="Color"
                 className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
               />
@@ -892,14 +1010,27 @@ function AdminProducts() {
                 <input
                   type="text"
                   value={variantForm.sku}
-                  onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
+                  onChange={(e) =>
+                    setVariantForm({ ...variantForm, sku: e.target.value })
+                  }
                   placeholder="SKU"
                   className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-28"
                   required
                 />
                 <button
                   type="button"
-                  onClick={() => setVariantForm({ ...variantForm, sku: generateSKU(activeProduct?.name || form.name, variantForm.size === "Custom" ? variantForm.customSize : variantForm.size, variantForm.color) })}
+                  onClick={() =>
+                    setVariantForm({
+                      ...variantForm,
+                      sku: generateSKU(
+                        activeProduct?.name || form.name,
+                        variantForm.size === "Custom"
+                          ? variantForm.customSize
+                          : variantForm.size,
+                        variantForm.color,
+                      ),
+                    })
+                  }
                   className="border border-ink/20 px-2 py-1 text-xs text-ink/60 hover:border-ink hover:text-ink transition-colors cursor-pointer whitespace-nowrap"
                   title="Auto-generate SKU"
                 >
@@ -909,7 +1040,9 @@ function AdminProducts() {
               <input
                 type="number"
                 value={variantForm.stock}
-                onChange={(e) => setVariantForm({ ...variantForm, stock: e.target.value })}
+                onChange={(e) =>
+                  setVariantForm({ ...variantForm, stock: e.target.value })
+                }
                 placeholder="Stock"
                 className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-20"
               />
@@ -959,16 +1092,33 @@ function AdminProducts() {
             >
               <label
                 htmlFor="product-image-file"
-                className="flex flex-col items-center justify-center w-32 h-32 border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
+                className="flex flex-col items-center justify-center w-32 aspect-[4/5] border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
               >
                 {imageFile ? (
                   <span className="text-xs text-center px-2 break-all">
                     {imageFile.name}
                   </span>
                 ) : (
-                  <span className="text-3xl font-light leading-none">+</span>
+                  <span className="flex flex-col items-center gap-1">
+                    <svg
+                      className="w-6 h-6"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    >
+                      <path
+                        d="M12 19V5M5 12l7-7 7 7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
                 )}
               </label>
+              <p className="text-[11px] text-ink/40">
+                Recommended: 930 × 1163px
+              </p>
               <input
                 id="product-image-file"
                 type="file"

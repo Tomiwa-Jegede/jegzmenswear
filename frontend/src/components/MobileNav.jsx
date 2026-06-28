@@ -8,6 +8,7 @@ import {
   IconLogIn,
   IconLogOut,
   IconBag,
+  IconInfo,
 } from "./icons";
 
 function MobileNav({
@@ -82,7 +83,14 @@ function MobileNav({
                 <IconTag className="h-4 w-4" />
                 Shop
               </Link>
-              
+              <Link
+                to="/info"
+                onClick={onClose}
+                className="flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-ink/70 hover:text-ink transition-colors"
+              >
+                <IconInfo className="h-4 w-4" />
+                Info
+              </Link>
               {isAuthenticated && (
                 <button
                   onClick={() => {

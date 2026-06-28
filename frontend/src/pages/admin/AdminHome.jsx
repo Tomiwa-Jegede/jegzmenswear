@@ -57,14 +57,14 @@ function AdminHome() {
             Manage Hero Images
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link
             to="/admin/campaign"
             className="block border border-ink/10 px-6 py-4 text-sm uppercase tracking-[0.15em] text-ink hover:bg-ink hover:text-offwhite transition-colors"
           >
             Manage Campaign Images
           </Link>
-        </li>
+        </li> */}
         <li>
           <Link
             to="/admin/products"
@@ -73,7 +73,7 @@ function AdminHome() {
             Manage Products
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link
             to="/admin/collections"
             className="block border border-ink/10 px-6 py-4 text-sm uppercase tracking-[0.15em] text-ink hover:bg-ink hover:text-offwhite transition-colors"
@@ -88,7 +88,7 @@ function AdminHome() {
           >
             Manage Spotlight
           </Link>
-        </li>
+        </li> */}
         <li>
           <Link
             to="/admin/music"

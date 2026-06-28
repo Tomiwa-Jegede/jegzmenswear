@@ -40,8 +40,8 @@ model Product {
   price        Decimal  @db.Decimal(10, 2)
   isFeatured   Boolean  @default(false)
   isActive     Boolean  @default(true)
-  collectionId String
-  collection   Collection @relation(fields: [collectionId], references: [id])
+  collectionId String?
+  collection   Collection? @relation(fields: [collectionId], references: [id])
   images       ProductImage[]
   variants     ProductVariant[]
   createdAt    DateTime @default(now())

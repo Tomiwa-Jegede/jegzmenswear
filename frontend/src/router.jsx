@@ -5,6 +5,7 @@ import CollectionPage from "./pages/CollectionPage";
 import ProductPage from "./pages/ProductPage";
 import CartPage from "./pages/CartPage";
 import Shop from "./pages/Shop";
+import Info from "./pages/Info";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminHeroImages from "./pages/admin/AdminHeroImages";
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
       { path: "products/:slug", element: <ProductPage /> },
       { path: "cart", element: <CartPage /> },
       { path: "shop", element: <Shop /> },
+      { path: "info", element: <Info /> },
       { path: "admin/login", element: <AdminLogin /> },
       {
         path: "admin",

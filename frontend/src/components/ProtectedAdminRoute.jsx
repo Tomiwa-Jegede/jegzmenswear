@@ -6,7 +6,11 @@ function ProtectedAdminRoute() {
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
   }
-  return <Outlet />;
+  return (
+    <div style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <Outlet />
+    </div>
+  );
 }
 
 export default ProtectedAdminRoute;

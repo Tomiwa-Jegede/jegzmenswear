@@ -19,15 +19,19 @@ async function getAllProducts(req, res, next) {
       include: {
         images: { orderBy: { position: "asc" }, take: 1 },
         collection: { select: { name: true, slug: true } },
+        variants: { select: { stock: true } },
       },
       orderBy: { createdAt: "desc" },
     });
-    res.json(products);
+    const result = products.map(({ variants, ...p }) => ({
+      ...p,
+      isFullyOutOfStock: variants.every((v) => v.stock < 1),
+    }));
+    res.json(result);
   } catch (err) {
     next(err);
   }
 }
-
 async function getAllProductsAdmin(req, res, next) {
   try {
     const products = await prisma.product.findMany({

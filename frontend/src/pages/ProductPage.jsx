@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../lib/axios";
 import { useCart } from "../context/CartContext";
 import Skeleton from "../components/ui/Skeleton";
@@ -11,6 +11,7 @@ function getFocalPoint(val) {
 
 function ProductPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [selectedVariantId, setSelectedVariantId] = useState("");
@@ -63,6 +64,7 @@ function ProductPage() {
 }
 
   const selectedVariant = product.variants.find((v) => v.id === selectedVariantId);
+  const isFullyOutOfStock = product.variants.every((v) => v.stock < 1);
 
   const handleAddToCart = async () => {
     if (!selectedVariant || selectedVariant.stock < 1) return;
@@ -78,9 +80,27 @@ function ProductPage() {
     }
   };
 
+  const handleBuyNow = async () => {
+    if (!selectedVariant || selectedVariant.stock < 1) return;
+    setStatus("adding");
+    try {
+      await addToCart(selectedVariant.id, 1);
+      navigate("/cart"); // TODO: point to checkout once it exists
+    } catch (err) {
+      console.error(err);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 1500);
+    }
+  };
+
   return (
     <div className="px-6 py-12 grid gap-10 md:grid-cols-2 max-w-5xl mx-auto">
       <div className="bg-cream aspect-[3/4] overflow-hidden relative">
+        {isFullyOutOfStock && (
+          <span className="absolute top-3 right-3 z-10 bg-ink text-offwhite text-xs uppercase tracking-[0.15em] px-3 py-1.5">
+            Sold Out
+          </span>
+        )}
         {product.images[0] && (
           <>
             <FadeImage
@@ -104,17 +124,17 @@ function ProductPage() {
       </div>
 
       <div>
-        <p className="text-xs uppercase tracking-[0.25em] text-ink/40 mb-3">
+        <p className="font-overlock text-xs uppercase tracking-[0.25em] text-ink/40 mb-3">
           {product.collection.name}
         </p>
         <h1 className="font-serif text-4xl text-ink mb-4">{product.name}</h1>
-        <p className="text-lg text-ink/70 mb-6">
+        <p className="font-overlock text-lg text-ink/70 mb-6">
           ₦{Number(product.price).toLocaleString()}
         </p>
-        <p className="text-ink/70 mb-8">{product.description}</p>
+        <p className="font-overlock text-ink/70 mb-8">{product.description}</p>
 
         <div className="mb-8">
-          <p className="text-xs uppercase tracking-[0.2em] text-ink/50 mb-3">
+          <p className="font-overlock text-xs uppercase tracking-[0.2em] text-ink/50 mb-3">
             Size
           </p>
           <div className="flex flex-wrap gap-2">
@@ -123,7 +143,7 @@ function ProductPage() {
                 key={v.id}
                 disabled={v.stock < 1}
                 onClick={() => setSelectedVariantId(v.id)}
-                className={`px-4 py-2 text-sm border transition-colors ${
+                className={`font-overlock rounded-full! px-5 py-2 text-sm border transition-colors ${
                   v.id === selectedVariantId
                     ? "border-ink bg-ink text-offwhite"
                     : "border-ink/20 text-ink/70"
@@ -140,16 +160,25 @@ function ProductPage() {
           disabled={
             !selectedVariant || selectedVariant.stock < 1 || status === "adding"
           }
-          className="w-full bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 hover:bg-charcoal transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+          className="font-overlock w-full bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 rounded-sm hover:bg-charcoal transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
         >
           {status === "adding"
             ? "Adding..."
             : status === "added"
-              ? "Added to Bag"
+              ? "Added to Cart"
               : selectedVariant?.stock < 1
                 ? "Out of Stock"
-                : "Add to Bag"}
+                : "Add to Cart"}
         </button>
+        {selectedVariant && selectedVariant.stock > 0 && (
+          <button
+            onClick={handleBuyNow}
+            disabled={status === "adding"}
+            className="font-overlock w-full bg-transparent border border-ink text-ink text-sm uppercase tracking-[0.2em] py-4 mt-3 hover:bg-ink hover:text-offwhite transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+          >
+            Buy Now
+          </button>
+        )}
       </div>
     </div>
   );

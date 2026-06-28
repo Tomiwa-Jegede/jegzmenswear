@@ -317,7 +317,6 @@ function MusicPlayer() {
             letterSpacing: "0.05em",
           }}
         >
-          {track.title}
         </span>
       </button>
     </>

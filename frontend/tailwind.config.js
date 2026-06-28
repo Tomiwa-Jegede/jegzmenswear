@@ -3,8 +3,12 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["League Spartan", "sans-serif"],
+        serif: ["League Spartan", "serif"],
+      },
       colors: {
-        offwhite: "#F8F7F4",
+        offwhite: "#FFFFFF",
         cream: "#EFE9DF",
         ink: "#111111",
         charcoal: "#2A2A2A",

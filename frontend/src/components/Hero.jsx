@@ -219,22 +219,11 @@ function Hero({ maintenanceMode = false }) {
           {MobileCampaignImage}
           <div className="absolute inset-0 bg-ink/35" />
 
-          {Dots && (
-            <div
-              className="absolute inset-x-0 z-[3] flex items-center justify-center gap-2"
-              style={{
-                bottom: "calc(max(22%, env(safe-area-inset-bottom) + 6.5rem))",
-              }}
-            >
-              {Dots}
-            </div>
-          )}
-
           {!maintenanceMode && (
             <div
               className="absolute inset-x-0 z-[3] flex items-center justify-center"
               style={{
-                bottom: "calc(max(10%, env(safe-area-inset-bottom) + 3rem))",
+                bottom: "calc(max(22%, env(safe-area-inset-bottom) + 6.5rem))",
               }}
             >
               <Link
@@ -243,6 +232,17 @@ function Hero({ maintenanceMode = false }) {
               >
                 Shop
               </Link>
+            </div>
+          )}
+
+          {Dots && (
+            <div
+              className="absolute inset-x-0 z-[3] flex items-center justify-center gap-2"
+              style={{
+                bottom: "calc(max(10%, env(safe-area-inset-bottom) + 3rem))",
+              }}
+            >
+              {Dots}
             </div>
           )}
         </motion.div>
@@ -267,12 +267,13 @@ function Hero({ maintenanceMode = false }) {
           </motion.div>
 
           {/* Action column — quiet, curated, upper-third weighted */}
-          <div data-hero-action className="relative flex w-[38%] flex-col items-start gap-10 px-16 pt-[calc(var(--nav-height,89px)+4rem)]">
+          <div
+            data-hero-action
+            className="relative flex w-[38%] flex-col items-start gap-10 px-16 pt-[calc(var(--nav-height,89px)+4rem)]"
+          >
             {!maintenanceMode && (
               <>
-                <p className="text-xs uppercase tracking-[0.3em] text-burgundy">
-                  Onfleek Worldwide
-                </p>
+              
                 <Link
                   to="/shop"
                   className="group relative inline-flex w-full max-w-[260px] items-center justify-between overflow-hidden border border-ink px-8 py-5 text-sm uppercase tracking-[0.25em] text-ink"
@@ -292,26 +293,27 @@ function Hero({ maintenanceMode = false }) {
       </section>
 
       {/* Editorial copy — follows the hero, unchanged */}
-      <section className="relative bg-offwhite px-6 sm:px-10 lg:px-16 py-24 lg:py-32">
+      {/* <section className="relative bg-offwhite px-6 sm:px-10 lg:px-16 py-24 lg:py-32">
         <motion.div
           className="max-w-xl lg:max-w-2xl lg:mx-auto lg:text-center"
           style={{ y: editorialParallaxY }}
         >
           <p className="text-xs uppercase tracking-[0.3em] text-burgundy mb-6">
-            Onfleek Worldwide
+            {siteContent.hero_label}
           </p>
           <h1 className="font-serif text-5xl sm:text-6xl text-ink leading-[1.05] mb-6">
-            Young Legacy.
-            <br />
-            Modern Heritage.
+            {siteContent.hero_headline.split("\\n").map((line, i, arr) => (
+              <span key={i}>
+                {line}
+                {i < arr.length - 1 && <br />}
+              </span>
+            ))}
           </h1>
           <p className="text-base text-ink/70 leading-relaxed max-w-md lg:mx-auto">
-            Built for the generation that dresses with intention, carries
-            ambition with grace, and walks into every room as though they belong
-            there.
+            {siteContent.hero_subtext}
           </p>
         </motion.div>
-      </section>
+      </section> */}
     </>
   );
 }

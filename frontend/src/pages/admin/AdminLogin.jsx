@@ -27,12 +27,15 @@ function AdminLogin() {
   }
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-6">
+    <div
+      className="min-h-[60vh] flex items-center justify-center px-6"
+      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+    >
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm border border-ink/10 p-8"
       >
-        <h1 className="font-serif text-2xl text-ink mb-6">Admin Login</h1>
+        <h1 className="font-serif text-2xl text-ink mb-6">Welcome Back</h1>
         
         <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
           Username

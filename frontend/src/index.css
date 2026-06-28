@@ -10,6 +10,11 @@ html::-webkit-scrollbar {
   display: none;
 }
 
+/* Global border-radius for every bordered element site-wide */
+[class*="border"] {
+  border-radius: 8px;
+}
+
 @theme {
   --color-offwhite: #F8F7F4;
   --color-cream: #EFE9DF;
@@ -17,4 +22,16 @@ html::-webkit-scrollbar {
   --color-charcoal: #2A2A2A;
   --color-burgundy: #6A1F2B;
   --color-crimson: #8C2D3C;
+  --font-sans: "Erica One", sans-serif;
+  --font-serif: "Erica One", serif;
+  --font-overlock: "Overlock", sans-serif;
+}
+
+body {
+  font-weight: 500;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }

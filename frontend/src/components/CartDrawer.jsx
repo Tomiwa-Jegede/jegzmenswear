@@ -30,7 +30,7 @@ function CartDrawer() {
       <div className="relative w-full max-w-sm h-full bg-offwhite flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-ink/10">
           <p className="text-xs uppercase tracking-[0.25em] text-ink/60">
-            Your Bag
+            Your Cart
           </p>
           <button
             onClick={() => setIsOpen(false)}
@@ -53,7 +53,7 @@ function CartDrawer() {
               </div>
             ))}
           {!loading && cart.items.length === 0 && (
-            <p className="text-sm text-ink/50">Your bag is empty.</p>
+            <p className="text-sm text-ink/50">Your Cart is empty.</p>
           )}
           {!loading &&
             cart.items.map((item) => (
@@ -133,7 +133,7 @@ function CartDrawer() {
             onClick={() => setIsOpen(false)}
             className="block w-full text-center bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-3 hover:bg-charcoal transition-colors"
           >
-            View Bag
+            View Cart
           </Link>
         </div>
       </div>
