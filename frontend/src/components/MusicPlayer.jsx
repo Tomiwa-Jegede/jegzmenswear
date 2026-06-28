@@ -3,7 +3,7 @@ import api from "../lib/axios";
 import stickerUp from "../assets/onfleekStickerUp.png";
 import stickerNormal from "../assets/onfleekSticker.png";
 import stickerDown from "../assets/onfleekStickerDown.png";
-import bgOnfleek from "../assets/bgOnfleek.png";
+
 
 // Cycle order: up → normal → down → normal → (repeats)
 const STICKER_SEQUENCE = [stickerUp, stickerNormal, stickerDown, stickerNormal];
@@ -89,7 +89,7 @@ function MusicPlayer() {
 
   // Continuous sticker cycling driven by bass level
   useEffect(() => {
-    if (!playing || !analyserRef.current) {
+    if (!playing || muted || !analyserRef.current) {
       stepIndexRef.current = 1;
       setSlotSrcs((prev) => {
         const copy = [...prev];
@@ -182,9 +182,7 @@ function MusicPlayer() {
             pointerEvents: "none",
             borderRadius: "20px 20px 0 0",
             overflow: "hidden",
-            backgroundImage: `url(${bgOnfleek})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+        
           }}
         >
           <img
