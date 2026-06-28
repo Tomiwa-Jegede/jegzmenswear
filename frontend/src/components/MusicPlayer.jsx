@@ -145,9 +145,19 @@ function MusicPlayer() {
   const handleMuteToggle = async () => {
     const next = !muted;
     setMuted(next);
-    if (audioRef.current) audioRef.current.muted = next;
-    if (!next && _audioContext?.state === "suspended") {
-      await _audioContext.resume();
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!next) {
+      // Unmuting — resume context, unmute, ensure playing
+      if (_audioContext?.state === "suspended") {
+        await _audioContext.resume();
+      }
+      audio.muted = false;
+      if (audio.paused) {
+        await audio.play().then(() => setPlaying(true)).catch(() => {});
+      }
+    } else {
+      audio.muted = true;
     }
   };
 
