@@ -130,7 +130,7 @@ function MusicPlayer() {
       const dt = now - lastTime;
       lastTime = now;
 
-      accumulator += (dt / 150); 
+      accumulator += (dt / 200); 
 
       if (accumulator >= 1) {
         const steps = Math.floor(accumulator);
