@@ -101,9 +101,6 @@ function MusicPlayer() {
   useEffect(() => {
     if (!analyserRef.current) return;
 
-    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-    const MIN_RATE = 0.02;
-    const RATE_SCALE = 0.09;
     let accumulator = 0;
     let lastTime = performance.now();
 
@@ -129,15 +126,11 @@ function MusicPlayer() {
         return;
       }
 
-      analyserRef.current.getByteFrequencyData(dataArray);
-      const bass = (dataArray[0] + dataArray[1] + dataArray[2]) / 3;
-      const normalized = Math.min(bass / 180, 1);
-
       const now = performance.now();
       const dt = now - lastTime;
       lastTime = now;
 
-      accumulator += (MIN_RATE + normalized * RATE_SCALE) * (dt / 16.67);
+      accumulator += (dt / 150); 
 
       if (accumulator >= 1) {
         const steps = Math.floor(accumulator);
