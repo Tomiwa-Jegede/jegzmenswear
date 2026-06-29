@@ -43,28 +43,10 @@ function MobileNav({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "-100%" }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed top-0 left-0 w-[80%] max-w-xs bg-offwhite border-r border-b border-ink/10 z-50 sm:hidden flex flex-col px-6 py-6"
+            className="fixed top-20 left-0 w-[65%] max-w-xs bg-offwhite border border-ink/10 rounded-2xl shadow-xl z-50 sm:hidden flex flex-col px-6 py-6"
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
               <span className="font-serif text-xl text-ink">Menu</span>
-              <button
-                onClick={onClose}
-                aria-label="Close menu"
-                className="text-ink/60 hover:text-ink transition-colors cursor-pointer p-1"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                >
-                  <line x1="2" y1="2" x2="18" y2="18" />
-                  <line x1="18" y1="2" x2="2" y2="18" />
-                </svg>
-              </button>
             </div>
             <nav className="flex flex-col">
               <Link

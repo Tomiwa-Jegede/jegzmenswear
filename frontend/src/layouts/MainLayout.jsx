@@ -162,7 +162,9 @@ function MainLayout() {
   const showMaintenance = maintenance && !isAuthenticated && !location.pathname.startsWith("/admin");
 
   return (
-    <div className={`bg-white flex flex-col ${showMaintenance ? "h-screen overflow-hidden" : "min-h-screen"}`}>
+    <div
+      className={`bg-white flex flex-col ${showMaintenance ? "h-screen overflow-hidden" : "min-h-screen"}`}
+    >
       <ScrollToTop />
       <PageLoader visible={loaderVisible} />
       <style>{`
@@ -246,29 +248,44 @@ function MainLayout() {
         </div>
 
         {!showMaintenance && (
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          aria-label="Open menu"
-          className={`sm:hidden hover:opacity-80 transition-colors cursor-pointer p-1 ${
-            scrolled
-              ? "text-ink"
-              : "text-offwhite [filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.5))]"
-          }`}
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 22 22"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
+          <button
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            className={`relative z-[60] sm:hidden hover:opacity-80 transition-colors cursor-pointer p-1 ${
+              scrolled
+                ? "text-ink"
+                : "text-offwhite [filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.5))]"
+            }`}
           >
-            <line x1="3" y1="6" x2="19" y2="6" />
-            <line x1="3" y1="11" x2="19" y2="11" />
-            <line x1="3" y1="16" x2="19" y2="16" />
-          </svg>
-        </button>
+            {isMobileMenuOpen ? (
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 22 22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              >
+                <line x1="4" y1="4" x2="18" y2="18" />
+                <line x1="18" y1="4" x2="4" y2="18" />
+              </svg>
+            ) : (
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 22 22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              >
+                <line x1="3" y1="6" x2="19" y2="6" />
+                <line x1="3" y1="11" x2="19" y2="11" />
+                <line x1="3" y1="16" x2="19" y2="16" />
+              </svg>
+            )}
+          </button>
         )}
 
         <div className="sm:hidden flex items-center gap-3">
@@ -288,47 +305,53 @@ function MainLayout() {
             )}
           </Link>
           {!showMaintenance && (
-          <button
-            onClick={() => setIsOpen(true)}
-            aria-label="Cart"
-            className={`relative transition-colors cursor-pointer p-1 ${
-              scrolled
-                ? "text-ink hover:text-ink/70"
-                : "text-offwhite [filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.5))] hover:text-offwhite/80"
-            }`}
-          >
-            <IconBag className="h-5 w-5" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] leading-none rounded-full h-4 w-4 flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </button>
+            <button
+              onClick={() => setIsOpen(true)}
+              aria-label="Cart"
+              className={`relative transition-colors cursor-pointer p-1 ${
+                scrolled
+                  ? "text-ink hover:text-ink/70"
+                  : "text-offwhite [filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.5))] hover:text-offwhite/80"
+              }`}
+            >
+              <IconBag className="h-5 w-5" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] leading-none rounded-full h-4 w-4 flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </button>
           )}
         </div>
 
-    <div className="hidden sm:flex items-center gap-6">
-          {!showMaintenance && <Link
-            to="/"
-            className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
-          >
-            <IconHome className="h-3.5 w-3.5" />
-            Home
-          </Link>}
-          {!showMaintenance && <Link
-            to="/shop"
-            className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
-          >
-            <IconTag className="h-3.5 w-3.5" />
-            Shop
-          </Link>}
-          {!showMaintenance && <Link
-            to="/info"
-            className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
-          >
-            <IconInfo className="h-3.5 w-3.5" />
-            Info
-          </Link>}
+        <div className="hidden sm:flex items-center gap-6">
+          {!showMaintenance && (
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
+            >
+              <IconHome className="h-3.5 w-3.5" />
+              Home
+            </Link>
+          )}
+          {!showMaintenance && (
+            <Link
+              to="/shop"
+              className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
+            >
+              <IconTag className="h-3.5 w-3.5" />
+              Shop
+            </Link>
+          )}
+          {!showMaintenance && (
+            <Link
+              to="/info"
+              className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/50 hover:text-ink transition-colors"
+            >
+              <IconInfo className="h-3.5 w-3.5" />
+              Info
+            </Link>
+          )}
           {isAuthenticated ? (
             <Link
               to="/admin"
@@ -346,13 +369,15 @@ function MainLayout() {
               Login
             </Link>
           )}
-          {!showMaintenance && <button
-            onClick={() => setIsOpen(true)}
-            className="flex items-center gap-1.5 text-sm uppercase tracking-[0.2em] text-ink/70 hover:text-ink transition-colors cursor-pointer"
-          >
-            <IconBag className="h-4 w-4" />
-            Cart {itemCount > 0 && `(${itemCount})`}
-          </button>}
+          {!showMaintenance && (
+            <button
+              onClick={() => setIsOpen(true)}
+              className="flex items-center gap-1.5 text-sm uppercase tracking-[0.2em] text-ink/70 hover:text-ink transition-colors cursor-pointer"
+            >
+              <IconBag className="h-4 w-4" />
+              Cart {itemCount > 0 && `(${itemCount})`}
+            </button>
+          )}
           {isAuthenticated && (
             <button
               onClick={logout}
