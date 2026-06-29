@@ -39,11 +39,11 @@ function MobileNav({
             className="fixed inset-0 bg-ink/40 z-40 sm:hidden"
           />
           <motion.div
-            initial={{ opacity: 0, x: "100%" }}
+            initial={{ opacity: 0, x: "-100%" }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: "100%" }}
+            exit={{ opacity: 0, x: "-100%" }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed top-0 right-0 w-[80%] max-w-xs bg-offwhite border-l border-b border-ink/10 z-50 sm:hidden flex flex-col px-6 py-8"
+            className="fixed top-0 left-0 w-[80%] max-w-xs bg-offwhite border-r border-b border-ink/10 z-50 sm:hidden flex flex-col px-6 py-8"
           >
             <div className="flex items-center justify-between mb-10">
               <span className="font-serif text-xl text-ink">Menu</span>
@@ -66,7 +66,7 @@ function MobileNav({
                 </svg>
               </button>
             </div>
-            <nav className="flex flex-col gap-6">
+            <nav className="flex flex-col">
               <Link
                 to="/"
                 onClick={onClose}
@@ -75,6 +75,7 @@ function MobileNav({
                 <IconHome className="h-4 w-4" />
                 Home
               </Link>
+              <div className="w-full border-b border-ink/10 my-4" />
               <Link
                 to="/shop"
                 onClick={onClose}
@@ -83,6 +84,7 @@ function MobileNav({
                 <IconTag className="h-4 w-4" />
                 Shop
               </Link>
+              <div className="w-full border-b border-ink/10 my-4" />
               <Link
                 to="/info"
                 onClick={onClose}
@@ -91,6 +93,7 @@ function MobileNav({
                 <IconInfo className="h-4 w-4" />
                 Info
               </Link>
+              <div className="w-full border-b border-ink/10 my-4" />
               {isAuthenticated && (
                 <button
                   onClick={() => {

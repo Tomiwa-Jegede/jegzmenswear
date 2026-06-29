@@ -43,12 +43,12 @@ function Shop() {
     return () => clearTimeout(timeout);
   }, [search, collectionSlug, minPrice, maxPrice]);
 
-  const marqueeText = "ALL ORDERS ARE PROCESSED WITHIN 7-14 BUSINESS DAYS BEFORE THEY ARE SENT OUT FOR DELIVERY";
-  const repeated = Array(6).fill(marqueeText);
+  // const marqueeText = "ALL ORDERS ARE PROCESSED WITHIN 7-14 BUSINESS DAYS BEFORE THEY ARE SENT OUT FOR DELIVERY";
+  // const repeated = Array(6).fill(marqueeText);
 
   return (
     <div className="pb-12 bg-white min-h-screen">
-      <div className="w-full overflow-hidden border-b border-ink/10 py-3 mb-8 bg-white">
+      {/* <div className="w-full overflow-hidden border-b border-ink/10 py-3 mb-8 bg-white">
         <div
           className="flex gap-12 w-fit animate-marquee"
           style={{ animation: "marquee 60s linear infinite" }}
@@ -62,7 +62,7 @@ function Shop() {
             </span>
           ))}
         </div>
-      </div>
+      </div> */}
       <div className="px-6">
       
 
