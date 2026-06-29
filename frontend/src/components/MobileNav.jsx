@@ -43,7 +43,7 @@ function MobileNav({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed top-0 right-0 bottom-0 w-[80%] max-w-xs bg-offwhite border-l border-ink/10 z-50 sm:hidden flex flex-col px-6 py-6"
+            className="fixed top-0 right-0 w-[80%] max-w-xs bg-offwhite border-l border-b border-ink/10 z-50 sm:hidden flex flex-col px-6 py-8"
           >
             <div className="flex items-center justify-between mb-10">
               <span className="font-serif text-xl text-ink">Menu</span>

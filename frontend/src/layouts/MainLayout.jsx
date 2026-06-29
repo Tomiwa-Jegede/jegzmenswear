@@ -206,7 +206,7 @@ function MainLayout() {
       `}</style>
       <header
         ref={headerRef}
-        className={`fixed top-0 left-0 right-0 z-30 px-6 py-5 sm:py-3 flex items-center justify-between transition-colors duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-30 px-6 py-10 sm:py-5 flex items-center justify-between transition-colors duration-300 ${
           scrolled ? "bg-white" : "bg-transparent"
         }`}
       >

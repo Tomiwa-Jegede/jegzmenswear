@@ -22,13 +22,15 @@ html::-webkit-scrollbar {
   --color-charcoal: #2A2A2A;
   --color-burgundy: #6A1F2B;
   --color-crimson: #8C2D3C;
-  --font-sans: "Erica One", sans-serif;
-  --font-serif: "Erica One", serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Inter', serif;
   --font-overlock: "Overlock", sans-serif;
 }
 
+
+
 body {
-  font-weight: 500;
+  font-weight: 900;
 }
 
 @keyframes marquee {
