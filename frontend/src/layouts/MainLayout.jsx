@@ -212,7 +212,7 @@ function MainLayout() {
           scrolled ? "bg-white" : "bg-transparent"
         }`}
       >
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:left-auto sm:top-auto sm:translate-x-0 sm:translate-y-0">
+        <div className="absolute left-1/2 top-1/2 -translate-x-[58%] -translate-y-1/2 sm:static sm:left-auto sm:top-auto sm:translate-x-0 sm:translate-y-0">
           <div
             className="relative flex items-center justify-center"
             style={{ perspective: "500px" }}
