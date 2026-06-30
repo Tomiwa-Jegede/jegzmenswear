@@ -16,12 +16,14 @@ function ProductPage() {
   const [product, setProduct] = useState(null);
   const [selectedVariantId, setSelectedVariantId] = useState("");
   const [status, setStatus] = useState("idle");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     api
       .get(`/products/${slug}`)
       .then((res) => {
         setProduct(res.data);
+        setActiveImageIndex(0);
         const firstInStock = res.data.variants.find((v) => v.stock > 0);
         setSelectedVariantId(firstInStock?.id || res.data.variants[0]?.id || "");
       })
@@ -95,33 +97,54 @@ function ProductPage() {
 
   return (
     <div className="px-6 py-12 grid gap-10 md:grid-cols-2 max-w-5xl mx-auto">
-      <div className="bg-cream aspect-[3/4] overflow-hidden relative">
-        
-        {product.images[0] && (
-          <>
-            <FadeImage
-              src={product.images[0].url}
-              alt={product.images[0].altText || product.name}
-              className="absolute inset-0 h-full w-full object-cover sm:hidden"
-              style={{
-                objectPosition: getFocalPoint(product.images[0].mobileCropMode),
-              }}
-            />
-            <FadeImage
-              src={product.images[0].url}
-              alt={product.images[0].altText || product.name}
-              className="absolute inset-0 h-full w-full object-cover hidden sm:block"
-              style={{
-                objectPosition: getFocalPoint(product.images[0].desktopCropMode),
-              }}
-            />
-          </>
+      <div>
+        <div className="bg-cream aspect-[3/4] overflow-hidden relative">
+          {product.images[activeImageIndex] && (
+            <>
+              <FadeImage
+                src={product.images[activeImageIndex].url}
+                alt={product.images[activeImageIndex].altText || product.name}
+                className="absolute inset-0 h-full w-full object-cover sm:hidden"
+                style={{
+                  objectPosition: getFocalPoint(product.images[activeImageIndex].mobileCropMode),
+                }}
+              />
+              <FadeImage
+                src={product.images[activeImageIndex].url}
+                alt={product.images[activeImageIndex].altText || product.name}
+                className="absolute inset-0 h-full w-full object-cover hidden sm:block"
+                style={{
+                  objectPosition: getFocalPoint(product.images[activeImageIndex].desktopCropMode),
+                }}
+              />
+            </>
+          )}
+        </div>
+        {product.images.length > 1 && (
+          <div className="flex gap-3 mt-4 overflow-x-auto">
+            {product.images.map((img, i) => (
+              <button
+                key={img.id}
+                onClick={() => setActiveImageIndex(i)}
+                className={`flex-shrink-0 w-16 h-20 bg-cream overflow-hidden border transition-colors cursor-pointer ${
+                  i === activeImageIndex ? "border-ink" : "border-ink/10 hover:border-ink/40"
+                }`}
+              >
+                <img
+                  src={img.url}
+                  alt={img.altText || ""}
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: getFocalPoint(img.desktopCropMode) }}
+                />
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
       <div>
         <p className="font-overlock text-xs uppercase tracking-[0.25em] text-ink/40 mb-3">
-          {product.collection.name}
+          {product.collection?.name}
         </p>
         <h1 className="font-serif text-4xl text-ink mb-4">{product.name}</h1>
         <p className="font-overlock text-lg text-ink/70 mb-6">

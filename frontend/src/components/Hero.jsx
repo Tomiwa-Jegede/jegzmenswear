@@ -68,14 +68,20 @@ function Hero({ maintenanceMode = false }) {
 
   // Reproduce the admin-selected crop box as a scale+translate transform.
   // Pass the relevant breakpoint's crop fields (desktop* or mobile*).
-  function getDesktopObjectPosition(img) {
-    const val = img?.desktopCropMode;
-    return val && val !== "auto" && val !== "manual" ? val : "center center";
+  function getDesktopImageStyle(img) {
+    const pos = img?.desktopCropMode && img.desktopCropMode !== "auto" && img.desktopCropMode !== "manual"
+      ? img.desktopCropMode
+      : "center center";
+    const zoom = img?.desktopZoom || 1;
+    return { objectPosition: pos, transform: `scale(${zoom})`, transformOrigin: pos };
   }
 
-  function getMobileObjectPosition(img) {
-    const val = img?.mobileCropMode;
-    return val && val !== "auto" && val !== "manual" ? val : "center center";
+  function getMobileImageStyle(img) {
+    const pos = img?.mobileCropMode && img.mobileCropMode !== "auto" && img.mobileCropMode !== "manual"
+      ? img.mobileCropMode
+      : "center center";
+    const zoom = img?.mobileZoom || 1;
+    return { objectPosition: pos, transform: `scale(${zoom})`, transformOrigin: pos };
   }
 
   const Dots = validImages.length > 1 && (
@@ -151,7 +157,7 @@ function Hero({ maintenanceMode = false }) {
               loading="eager"
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover"
-              style={{ objectPosition: getDesktopObjectPosition(currentImage) }}
+              style={getDesktopImageStyle(currentImage)}
             />
           </motion.div>
         </AnimatePresence>
@@ -177,7 +183,7 @@ function Hero({ maintenanceMode = false }) {
           loading="eager"
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition: getMobileObjectPosition(currentImage) }}
+          style={getMobileImageStyle(currentImage)}
         />
       </motion.div>
     </AnimatePresence>

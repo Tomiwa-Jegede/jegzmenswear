@@ -4,8 +4,10 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import Skeleton from "./ui/Skeleton";
 import FadeImage from "./FadeImage";
 
-function getFocalPoint(val) {
-  return val && val !== "auto" && val !== "manual" ? val : "center center";
+function getImageStyle(cropMode, zoom) {
+  const pos = cropMode && cropMode !== "auto" && cropMode !== "manual" ? cropMode : "center center";
+  const z = zoom || 1;
+  return { objectPosition: pos, transform: `scale(${z})`, transformOrigin: pos };
 }
 
 function CollectionCard({ collection, index }) {
@@ -31,18 +33,14 @@ function CollectionCard({ collection, index }) {
               <FadeImage
                 src={collection.heroImageUrl}
                 alt={collection.altText || collection.name}
-                className="absolute inset-0 h-full w-full object-cover sm:hidden transition-transform duration-700 group-hover:scale-105"
-                style={{
-                  objectPosition: getFocalPoint(collection.mobileCropMode),
-                }}
+                className="absolute inset-0 h-full w-full object-cover sm:hidden"
+                style={getImageStyle(collection.mobileCropMode, collection.mobileZoom)}
               />
               <FadeImage
                 src={collection.heroImageUrl}
                 alt={collection.altText || collection.name}
-                className="absolute inset-0 h-full w-full object-cover hidden sm:block transition-transform duration-700 group-hover:scale-105"
-                style={{
-                  objectPosition: getFocalPoint(collection.desktopCropMode),
-                }}
+                className="absolute inset-0 h-full w-full object-cover hidden sm:block"
+                style={getImageStyle(collection.desktopCropMode, collection.desktopZoom)}
               />
             </>
           ) : (

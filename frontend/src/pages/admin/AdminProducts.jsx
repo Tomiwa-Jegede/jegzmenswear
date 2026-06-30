@@ -4,41 +4,11 @@ import { useToast } from "../../context/ToastContext";
 import api from "../../lib/axios";
 import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import Skeleton from "../../components/ui/Skeleton";
+import ZoomFocalEditor from "../../components/ZoomFocalEditor";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "Custom"];
 
-const FOCAL_OPTIONS = [
-  ["left top", "center top", "right top"],
-  ["left center", "center center", "right center"],
-  ["left bottom", "center bottom", "right bottom"],
-];
-
-function FocalPointPicker({ label, value, onChange }) {
-  const current = value || "center center";
-  return (
-    <div>
-      <p className="text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-        {label}
-      </p>
-      <div className="grid grid-cols-3 gap-1 w-28">
-        {FOCAL_OPTIONS.flat().map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => onChange(v)}
-            title={v}
-            className={`h-8 w-8 border flex items-center justify-center transition-colors cursor-pointer ${current === v ? "border-ink bg-ink" : "border-ink/20 hover:border-ink"}`}
-          >
-            <span
-              className={`block w-2 h-2 rounded-full ${current === v ? "bg-offwhite" : "bg-ink/40"}`}
-            />
-          </button>
-        ))}
-      </div>
-      <p className="text-[10px] text-ink/40 mt-1">{current}</p>
-    </div>
-  );
-}
+const DEFAULT_FOCAL = { focalX: 50, focalY: 50, zoom: 1 };
 
 function generateSKU(name, size, color) {
   const namePart = (name || "PRD")
@@ -59,7 +29,6 @@ const emptyVariantForm = {
   stock: 0,
   customSize: "",
 };
-const emptyImageForm = { altText: "", position: 0 };
 const emptyProductForm = {
   name: "",
   description: "",
@@ -67,6 +36,7 @@ const emptyProductForm = {
   isFeatured: false,
   isActive: true,
 };
+
 function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -80,14 +50,17 @@ function AdminProducts() {
   const [bulkStockValue, setBulkStockValue] = useState("");
   const [variantEdits, setVariantEdits] = useState({}); // { [variantId]: {size,color,sku,stock} }
   const [imageFile, setImageFile] = useState(null);
-  const [imageForm, setImageForm] = useState(emptyImageForm);
   const [uploading, setUploading] = useState(false);
   const [imageFilePreviewUrl, setImageFilePreviewUrl] = useState(null);
-  const [desktopFocal, setDesktopFocal] = useState("center center");
-  const [mobileFocal, setMobileFocal] = useState("center center");
+
+  // Replaces the old 9-point focal picker — each is { focalX, focalY, zoom }
+  const [desktopFocal, setDesktopFocal] = useState(DEFAULT_FOCAL);
+  const [mobileFocal, setMobileFocal] = useState(DEFAULT_FOCAL);
+
   const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
   function loadProducts() {
     api
       .get("/products/admin/all")
@@ -115,9 +88,8 @@ function AdminProducts() {
     setPendingVariants([]);
     setImageFile(null);
     setImageFilePreviewUrl(null);
-    setImageForm(emptyImageForm);
-    setDesktopFocal("center center");
-    setMobileFocal("center center");
+    setDesktopFocal(DEFAULT_FOCAL);
+    setMobileFocal(DEFAULT_FOCAL);
     setCreateStep(1);
     setView("form");
   }
@@ -159,9 +131,8 @@ function AdminProducts() {
     setCreateStep(1);
     setImageFile(null);
     setImageFilePreviewUrl(null);
-    setImageForm(emptyImageForm);
-    setDesktopFocal("center center");
-    setMobileFocal("center center");
+    setDesktopFocal(DEFAULT_FOCAL);
+    setMobileFocal(DEFAULT_FOCAL);
     loadProducts();
   }
 
@@ -197,8 +168,15 @@ function AdminProducts() {
   function handleAddPendingVariant(e) {
     e.preventDefault();
     if (!variantForm.size) return;
-    const autoSku = generateSKU(form.name, variantForm.size === "Custom" ? variantForm.customSize : variantForm.size, variantForm.color);
-    setPendingVariants((prev) => [...prev, { ...variantForm, sku: autoSku, id: Date.now() }]);
+    const autoSku = generateSKU(
+      form.name,
+      variantForm.size === "Custom" ? variantForm.customSize : variantForm.size,
+      variantForm.color,
+    );
+    setPendingVariants((prev) => [
+      ...prev,
+      { ...variantForm, sku: autoSku, id: Date.now() },
+    ]);
     setVariantForm(emptyVariantForm);
   }
 
@@ -253,14 +231,14 @@ function AdminProducts() {
           stock: Number(v.stock),
         });
       }
-      // 3. Upload image and attach
+      // 3. Upload image
       const url = await uploadImageToCloudinary(imageFile);
       await api.post(`/products/${product.id}/images`, {
         url,
-        altText: imageForm.altText,
-        position: Number(imageForm.position),
-        desktopCropMode: desktopFocal,
-        mobileCropMode: mobileFocal,
+        desktopCropMode: `${desktopFocal.focalX}% ${desktopFocal.focalY}%`,
+        desktopZoom: desktopFocal.zoom,
+        mobileCropMode: `${mobileFocal.focalX}% ${mobileFocal.focalY}%`,
+        mobileZoom: mobileFocal.zoom,
       });
       // 4. Switch to edit mode for the completed product
       await startEdit(product.id);
@@ -289,7 +267,13 @@ function AdminProducts() {
             ? variantForm.customSize || variantForm.size
             : variantForm.size,
         color: variantForm.color,
-        sku: generateSKU(activeProduct?.name || form.name, variantForm.size === "Custom" ? variantForm.customSize : variantForm.size, variantForm.color),
+        sku: generateSKU(
+          activeProduct?.name || form.name,
+          variantForm.size === "Custom"
+            ? variantForm.customSize
+            : variantForm.size,
+          variantForm.color,
+        ),
         stock: Number(variantForm.stock),
       });
       setVariantForm(emptyVariantForm);
@@ -334,6 +318,8 @@ function AdminProducts() {
     setImageFile(selected);
     if (imageFilePreviewUrl) URL.revokeObjectURL(imageFilePreviewUrl);
     setImageFilePreviewUrl(selected ? URL.createObjectURL(selected) : null);
+    setDesktopFocal(DEFAULT_FOCAL);
+    setMobileFocal(DEFAULT_FOCAL);
   }
 
   async function handleAddImage(e) {
@@ -344,16 +330,15 @@ function AdminProducts() {
       const url = await uploadImageToCloudinary(imageFile);
       await api.post(`/products/${activeProduct.id}/images`, {
         url,
-        altText: imageForm.altText,
-        position: Number(imageForm.position),
-        desktopCropMode: desktopFocal,
-        mobileCropMode: mobileFocal,
+        desktopCropMode: `${desktopFocal.focalX}% ${desktopFocal.focalY}%`,
+        desktopZoom: desktopFocal.zoom,
+        mobileCropMode: `${mobileFocal.focalX}% ${mobileFocal.focalY}%`,
+        mobileZoom: mobileFocal.zoom,
       });
       setImageFile(null);
       setImageFilePreviewUrl(null);
-      setImageForm(emptyImageForm);
-      setDesktopFocal("center center");
-      setMobileFocal("center center");
+      setDesktopFocal(DEFAULT_FOCAL);
+      setMobileFocal(DEFAULT_FOCAL);
       await startEdit(activeProduct.id);
     } catch (err) {
       showToast("The image could not be uploaded. Please try again.");
@@ -366,6 +351,7 @@ function AdminProducts() {
     await api.delete(`/products/images/${imageId}`);
     await startEdit(activeProduct.id);
   }
+
   if (loading && view === "list") {
     return (
       <div className="px-6 py-12 max-w-4xl">
@@ -420,7 +406,7 @@ function AdminProducts() {
                 {p.images?.[0] ? (
                   <img
                     src={p.images[0].url}
-                    alt={p.images[0].altText || p.name}
+                    alt={p.name}
                     className="w-20 h-20 object-cover flex-shrink-0"
                   />
                 ) : (
@@ -719,7 +705,6 @@ function AdminProducts() {
               placeholder="Color"
               className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
             />
-            
             <input
               type="number"
               value={variantForm.stock}
@@ -804,47 +789,27 @@ function AdminProducts() {
             required
           />
           {imageFilePreviewUrl && (
-            <div className="space-y-6">
-              <div className="relative w-full max-w-xs aspect-[3/4] bg-ink/5 border border-ink/20 overflow-hidden">
-                <img
-                  src={imageFilePreviewUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: desktopFocal }}
-                />
-              </div>
-              <div className="flex gap-8 flex-wrap">
-                <FocalPointPicker
-                  label="Desktop Focus"
-                  value={desktopFocal}
-                  onChange={setDesktopFocal}
-                />
-                <FocalPointPicker
-                  label="Mobile Focus"
-                  value={mobileFocal}
-                  onChange={setMobileFocal}
-                />
-              </div>
+            <div className="flex gap-8 flex-wrap">
+              <ZoomFocalEditor
+                label="Desktop"
+                aspect="3 / 4"
+                src={imageFilePreviewUrl}
+                focalX={desktopFocal.focalX}
+                focalY={desktopFocal.focalY}
+                zoom={desktopFocal.zoom}
+                onChange={setDesktopFocal}
+              />
+              <ZoomFocalEditor
+                label="Mobile"
+                aspect="9 / 16"
+                src={imageFilePreviewUrl}
+                focalX={mobileFocal.focalX}
+                focalY={mobileFocal.focalY}
+                zoom={mobileFocal.zoom}
+                onChange={setMobileFocal}
+              />
             </div>
           )}
-          <input
-            type="text"
-            value={imageForm.altText}
-            onChange={(e) =>
-              setImageForm({ ...imageForm, altText: e.target.value })
-            }
-            placeholder="Alt text"
-            className="w-full border border-ink/20 px-4 py-2 text-sm"
-          />
-          <input
-            type="number"
-            value={imageForm.position}
-            onChange={(e) =>
-              setImageForm({ ...imageForm, position: e.target.value })
-            }
-            placeholder="Position"
-            className="w-full border border-ink/20 px-4 py-2 text-sm"
-          />
           <div className="flex gap-3">
             <button
               type="button"
@@ -894,7 +859,6 @@ function AdminProducts() {
                       placeholder="Color"
                       className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
                     />
-                    
                     <input
                       type="number"
                       value={edit.stock ?? 0}
@@ -968,7 +932,6 @@ function AdminProducts() {
                 placeholder="Color"
                 className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24"
               />
-              
               <input
                 type="number"
                 value={variantForm.stock}
@@ -997,16 +960,12 @@ function AdminProducts() {
                 >
                   <img
                     src={img.url}
-                    alt={img.altText || ""}
+                    alt=""
                     className="w-16 h-16 object-cover flex-shrink-0"
                   />
                   <div className="flex-1">
-                    <p className="text-sm text-ink">
-                      {img.altText || "(no alt text)"}
-                    </p>
                     <p className="text-xs text-ink/50">
-                      Position {img.position}
-                      {img.isPlaceholder ? " · Placeholder" : ""}
+                      {img.isPlaceholder ? "Placeholder" : "Product image"}
                     </p>
                   </div>
                   <button
@@ -1060,47 +1019,27 @@ function AdminProducts() {
                 required
               />
               {imageFilePreviewUrl && (
-                <div className="space-y-6">
-                  <div className="relative w-full max-w-xs aspect-[3/4] bg-ink/5 border border-ink/20 overflow-hidden">
-                    <img
-                      src={imageFilePreviewUrl}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                      style={{ objectPosition: desktopFocal }}
-                    />
-                  </div>
-                  <div className="flex gap-8 flex-wrap">
-                    <FocalPointPicker
-                      label="Desktop Focus"
-                      value={desktopFocal}
-                      onChange={setDesktopFocal}
-                    />
-                    <FocalPointPicker
-                      label="Mobile Focus"
-                      value={mobileFocal}
-                      onChange={setMobileFocal}
-                    />
-                  </div>
+                <div className="flex gap-8 flex-wrap">
+                  <ZoomFocalEditor
+                    label="Desktop"
+                    aspect="3 / 4"
+                    src={imageFilePreviewUrl}
+                    focalX={desktopFocal.focalX}
+                    focalY={desktopFocal.focalY}
+                    zoom={desktopFocal.zoom}
+                    onChange={setDesktopFocal}
+                  />
+                  <ZoomFocalEditor
+                    label="Mobile"
+                    aspect="9 / 16"
+                    src={imageFilePreviewUrl}
+                    focalX={mobileFocal.focalX}
+                    focalY={mobileFocal.focalY}
+                    zoom={mobileFocal.zoom}
+                    onChange={setMobileFocal}
+                  />
                 </div>
               )}
-              <input
-                type="text"
-                value={imageForm.altText}
-                onChange={(e) =>
-                  setImageForm({ ...imageForm, altText: e.target.value })
-                }
-                placeholder="Alt text"
-                className="w-full border border-ink/20 px-4 py-2 text-sm"
-              />
-              <input
-                type="number"
-                value={imageForm.position}
-                onChange={(e) =>
-                  setImageForm({ ...imageForm, position: e.target.value })
-                }
-                placeholder="Position"
-                className="w-full border border-ink/20 px-4 py-2 text-sm"
-              />
               <button
                 type="submit"
                 disabled={uploading}
