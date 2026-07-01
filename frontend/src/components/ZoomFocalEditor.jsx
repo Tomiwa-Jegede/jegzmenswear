@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 3;
@@ -47,6 +47,7 @@ function ZoomFocalEditor({
   const imgNaturalRef = useRef({ w: 0, h: 0 });
   const dragRef = useRef(null); // { lastX, lastY } while dragging
   const pinchRef = useRef(null); // { startDist, startZoom } while pinching
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const handleImgLoad = useCallback((e) => {
     imgNaturalRef.current = {
@@ -87,6 +88,7 @@ function ZoomFocalEditor({
   const handleWheel = useCallback(
     (e) => {
       e.preventDefault();
+      setHasInteracted(true);
       const nextZoom = clamp(
         zoom - e.deltaY * WHEEL_SENSITIVITY,
         ZOOM_MIN,
@@ -98,6 +100,7 @@ function ZoomFocalEditor({
   );
 
   const handleMouseDown = useCallback((e) => {
+    setHasInteracted(true);
     dragRef.current = { lastX: e.clientX, lastY: e.clientY };
   }, []);
 
@@ -123,6 +126,7 @@ function ZoomFocalEditor({
 
   const handleTouchStart = useCallback(
     (e) => {
+      setHasInteracted(true);
       if (e.touches.length === 2) {
         pinchRef.current = { startDist: touchDist(e.touches), startZoom: zoom };
         dragRef.current = null;
@@ -201,18 +205,30 @@ function ZoomFocalEditor({
           alt=""
           draggable={false}
           onLoad={handleImgLoad}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: `${focalX}% ${focalY}%`,
-            transform: `scale(${zoom})`,
-            transformOrigin: `${focalX}% ${focalY}%`,
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
+          style={
+            hasInteracted
+              ? {
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: `${focalX}% ${focalY}%`,
+                  transform: `scale(${zoom})`,
+                  transformOrigin: `${focalX}% ${focalY}%`,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                }
+              : {
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  pointerEvents: "none",
+                  userSelect: "none",
+                }
+          }
         />
         {/* Focal point marker */}
         <div
