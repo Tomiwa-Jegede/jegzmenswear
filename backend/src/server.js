@@ -18,6 +18,10 @@ const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(",").map((u) => u.trim())
   : [];
 
+console.log("[CORS DEBUG] NODE_ENV at runtime:", process.env.NODE_ENV);
+
+
+
 const corsOptions =
   process.env.NODE_ENV === "production"
     ? {
