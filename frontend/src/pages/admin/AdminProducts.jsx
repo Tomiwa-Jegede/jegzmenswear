@@ -801,7 +801,7 @@ function AdminProducts() {
               />
               <ZoomFocalEditor
                 label="Mobile"
-                aspect="9 / 16"
+                aspect="4 / 5"
                 src={imageFilePreviewUrl}
                 focalX={mobileFocal.focalX}
                 focalY={mobileFocal.focalY}
@@ -1031,7 +1031,7 @@ function AdminProducts() {
                   />
                   <ZoomFocalEditor
                     label="Mobile"
-                    aspect="9 / 16"
+                    aspect="4 / 5"
                     src={imageFilePreviewUrl}
                     focalX={mobileFocal.focalX}
                     focalY={mobileFocal.focalY}
