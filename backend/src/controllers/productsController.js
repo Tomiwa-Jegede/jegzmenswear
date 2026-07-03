@@ -94,7 +94,14 @@ async function createProduct(req, res, next) {
     const { name, description, price, isFeatured, collectionId } = req.body;
     const slug = await generateUniqueSlug(prisma, "product", name);
     const product = await prisma.product.create({
-      data: { name, slug, description, price, isFeatured, collectionId },
+      data: {
+        name,
+        slug,
+        description,
+        price,
+        isFeatured,
+        ...(collectionId ? { collectionId } : {}),
+      },
     });
     res.status(201).json(product);
   } catch (err) {

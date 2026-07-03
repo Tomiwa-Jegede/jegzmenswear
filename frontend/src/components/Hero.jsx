@@ -36,11 +36,14 @@ function Hero({ maintenanceMode = false }) {
     reduceMotion ? ["0%", "0%"] : ["0%", "8%"],
   );
 
-  useEffect(() => {
+useEffect(() => {
     api
       .get("/hero-images")
-      .then((res) => setHeroImages(res.data))
-      .catch(console.error);
+      .then((res) => {
+        console.log("[HERO DEBUG] response:", res.data);
+        setHeroImages(res.data);
+      })
+      .catch((err) => console.error("[HERO DEBUG] error:", err));
   }, []);
 
   const validImages = heroImages.filter((img) => img?.url);
