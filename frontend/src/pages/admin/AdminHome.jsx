@@ -3,16 +3,31 @@ import { Link } from "react-router-dom";
 import api from "../../lib/axios";
 import { useToast } from "../../context/ToastContext";
 
+const ORDERS_POLL_INTERVAL_MS = 30000;
+
 function AdminHome() {
   const { showToast } = useToast();
   const [maintenance, setMaintenance] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [pendingOrderCount, setPendingOrderCount] = useState(0);
 
   useEffect(() => {
     api
       .get("/site-content")
       .then((res) => setMaintenance(res.data.maintenance_mode === "true"))
       .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    function loadPendingCount() {
+      api
+        .get("/orders", { params: { status: "PENDING" } })
+        .then((res) => setPendingOrderCount(res.data.length))
+        .catch(console.error);
+    }
+    loadPendingCount();
+    const interval = setInterval(loadPendingCount, ORDERS_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, []);
 
   async function toggleMaintenance() {
@@ -89,12 +104,25 @@ function AdminHome() {
             Manage Spotlight
           </Link>
         </li> */}
-        <li>
+       <li>
           <Link
             to="/admin/music"
-            className="block border border-ink/10 px-6 py-4 text-sm uppercase tracking-[0.15em] text-ink hover:bg-ink hover:text-offwhite transition-colors"
+            className="block border border-ink/10 px-6 py-4 text-smuppercase tracking-[0.15em] text-ink hover:bg-ink hover:text-offwhite transition-colors"
           >
             Manage Music
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/admin/orders"
+            className="relative block border border-ink/10 px-6 py-4 text-smuppercase tracking-[0.15em] text-ink hover:bg-ink hover:text-offwhite transition-colors"
+          >
+            Manage Orders
+            {pendingOrderCount > 0 && (
+              <span className="absolute top-1/2 -translate-y-1/2 right-4 bg-red-600 text-white text-[10px] leading-none rounded-full h-4 w-4 flex items-center justify-center">
+                {pendingOrderCount}
+              </span>
+            )}
           </Link>
         </li>
       </ul>

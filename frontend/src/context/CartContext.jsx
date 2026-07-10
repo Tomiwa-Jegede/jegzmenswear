@@ -61,6 +61,7 @@ export function CartProvider({ children }) {
         addToCart,
         updateQuantity,
         removeItem,
+        refreshCart,
         itemCount,
         subtotal,
       }}

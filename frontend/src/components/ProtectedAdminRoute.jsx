@@ -7,7 +7,7 @@ function ProtectedAdminRoute() {
     return <Navigate to="/admin/login" replace />;
   }
   return (
-    <div style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
       <Outlet />
     </div>
   );

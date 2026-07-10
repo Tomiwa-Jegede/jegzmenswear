@@ -11,6 +11,7 @@ const campaignImagesRouter = require("./routes/campaignImages");
 const heroImagesRouter = require("./routes/heroImages");
 const siteContentRouter = require("./routes/siteContent");
 const musicRouter = require("./routes/music");
+const ordersRouter = require("./routes/orders");
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use("/api/campaign-images", campaignImagesRouter);
 app.use("/api/hero-images", heroImagesRouter);
 app.use("/api/site-content", siteContentRouter);
 app.use("/api/music", musicRouter);
+app.use("/api/orders", ordersRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

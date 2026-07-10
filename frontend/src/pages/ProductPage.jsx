@@ -82,17 +82,19 @@ function ProductPage() {
     }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (!selectedVariant || selectedVariant.stock < 1) return;
-    setStatus("adding");
-    try {
-      await addToCart(selectedVariant.id, 1);
-      navigate("/cart"); // TODO: point to checkout once it exists
-    } catch (err) {
-      console.error(err);
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 1500);
-    }
+    navigate("/checkout", {
+      state: {
+        buyNowItem: {
+          variantId: selectedVariant.id,
+          quantity: 1,
+          productName: product.name,
+          size: selectedVariant.size,
+          price: Number(product.price),
+        },
+      },
+    });
   };
 
   return (
@@ -143,17 +145,17 @@ function ProductPage() {
       </div>
 
       <div>
-        <p className="font-overlock text-xs uppercase tracking-[0.25em] text-ink/40 mb-3">
+        <p className="font-sans text-xs uppercase tracking-[0.25em] text-ink/40 mb-3">
           {product.collection?.name}
         </p>
         <h1 className="font-serif text-4xl text-ink mb-4">{product.name}</h1>
-        <p className="font-overlock text-lg text-ink/70 mb-6">
+        <p className="font-sans text-lg text-ink/70 mb-6">
           ₦{Number(product.price).toLocaleString()}
         </p>
-        <p className="font-overlock text-ink/70 mb-8">{product.description}</p>
+        <p className="font-sans text-ink/70 mb-8">{product.description}</p>
 
         <div className="mb-8">
-          <p className="font-overlock text-xs uppercase tracking-[0.2em] text-ink/50 mb-3">
+          <p className="font-sans text-xs uppercase tracking-[0.2em] text-ink/50 mb-3">
             Size
           </p>
           <div className="flex flex-wrap gap-2">
@@ -162,7 +164,7 @@ function ProductPage() {
                 key={v.id}
                 disabled={v.stock < 1}
                 onClick={() => setSelectedVariantId(v.id)}
-                className={`font-overlock rounded-full! px-5 py-2 text-sm border transition-colors ${
+                className={`font-sans rounded-full! px-5 py-2text-sm border transition-colors ${
                   v.id === selectedVariantId
                     ? "border-ink bg-ink text-offwhite"
                     : "border-ink/20 text-ink/70"
@@ -179,7 +181,7 @@ function ProductPage() {
           disabled={
             !selectedVariant || selectedVariant.stock < 1 || status === "adding"
           }
-          className="font-overlock w-full bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 rounded-sm hover:bg-charcoal transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+          className="font-sans w-full bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 rounded-smhover:bg-charcoal transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
         >
           {status === "adding"
             ? "Adding..."
@@ -193,7 +195,7 @@ function ProductPage() {
           <button
             onClick={handleBuyNow}
             disabled={status === "adding"}
-            className="font-overlock w-full bg-transparent border border-ink text-ink text-sm uppercase tracking-[0.2em] py-4 mt-3 hover:bg-ink hover:text-offwhite transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+            className="font-sans w-full bg-transparent borderborder-ink text-ink text-sm uppercase tracking-[0.2em] py-4 mt-3 hover:bg-ink hover:text-offwhite transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
           >
             Buy Now
           </button>

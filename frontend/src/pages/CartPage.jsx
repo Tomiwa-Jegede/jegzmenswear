@@ -127,13 +127,12 @@ function CartPage() {
         </span>
       </div>
 
-      <button
-        disabled
-        className="mt-8 w-full bg-ink/30 text-offwhite text-sm uppercase tracking-[0.2em] py-4 cursor-not-allowed"
-        title="Checkout will be implemented in a future phase"
+      <Link
+        to="/checkout"
+        className="mt-8 block w-full text-center bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 hover:bg-charcoal transition-colors"
       >
-        Checkout — Coming Soon
-      </button>
+        Checkout
+      </Link>
     </div>
   );
 }
