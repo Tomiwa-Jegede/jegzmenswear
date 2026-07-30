@@ -9,7 +9,9 @@ async function fetchAllProducts() {
   let page = 1;
   let totalPages = 1;
   do {
-    const res = await fetch(`${API_URL}/products?page=${page}&limit=100`);
+    const res = await fetch(`${API_URL}/products?page=${page}&limit=100`, {
+      signal: AbortSignal.timeout(30000),
+    });
     if (!res.ok) throw new Error(`Failed to fetch products page ${page}: ${res.status}`);
     const data = await res.json();
     products.push(...data.products);
@@ -20,7 +22,9 @@ async function fetchAllProducts() {
 }
 
 async function fetchAllCollections() {
-  const res = await fetch(`${API_URL}/collections`);
+  const res = await fetch(`${API_URL}/collections`, {
+    signal: AbortSignal.timeout(30000),
+  });
   if (!res.ok) throw new Error(`Failed to fetch collections: ${res.status}`);
   return res.json();
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import api from "../lib/axios";
 import Skeleton from "../components/ui/Skeleton";
 import FadeImage from "../components/FadeImage";
@@ -53,6 +54,15 @@ useEffect(() => {
   // const repeated = Array(6).fill(marqueeText);
 
   return (
+    <>
+      <Helmet>
+        <title>Shop All | Jegzmenswear</title>
+        <meta
+          name="description"
+          content="Browse the full Jegzmenswear catalog — hoodies, jackets, jeans, sneakers, bags, caps, watches and more. Filter by collection, search, and price."
+        />
+        <link rel="canonical" href="https://jegzmenswear.store/shop" />
+      </Helmet>
     <div className="pb-12 bg-white min-h-screen">
       {/* <div className="w-full overflow-hidden border-b border-ink/10 py-3 mb-8 bg-white">
         <div
@@ -265,6 +275,7 @@ useEffect(() => {
       )}
     </div>
     </div>
+    </>
   );
 }
 
