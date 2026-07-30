@@ -156,7 +156,7 @@ useEffect(() => {
           >
             <FadeImage
               src={currentImage.url}
-              alt={currentImage.alt || "Onfleek campaign portrait"}
+              alt={currentImage.alt || "Jegzmenswear campaign portrait"}
               loading="eager"
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover"
@@ -182,7 +182,7 @@ useEffect(() => {
       >
         <FadeImage
           src={currentImage.url}
-          alt={currentImage.alt || "Onfleek campaign portrait"}
+          alt={currentImage.alt || "Jegzmenswear campaign portrait"}
           loading="eager"
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
@@ -201,6 +201,7 @@ useEffect(() => {
         data-hero
         className="relative h-screen w-full overflow-hidden bg-offwhite sm:h-screen"
       >
+        <h1 className="sr-only">Jegzmenswear — Premium Men's Fashion, Streetwear & Accessories</h1>
         {/* ===================== MOBILE — full-bleed image, nav overlays ===================== */}
         <motion.div
           className="absolute inset-0 sm:hidden"

@@ -1,8 +1,18 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { IconInfo } from "../components/icons";
 
 function Info() {
   return (
+    <>
+      <Helmet>
+        <title>Refund Policy & Delivery Info | Jegzmenswear</title>
+        <meta
+          name="description"
+          content="Refund policy and delivery information for Jegzmenswear orders — processing times, shipping details, and customer support."
+        />
+        <link rel="canonical" href="https://jegzmenswear.store/info" />
+      </Helmet>
     <div className="px-6 py-16 max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-10">
         <IconInfo className="h-6 w-6 text-ink/40" />
@@ -41,6 +51,7 @@ function Info() {
         </Link>
       </div>
     </div>
+    </>
   );
 }
 
