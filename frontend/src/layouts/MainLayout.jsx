@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import PageLoader from "../components/PageLoader";
 import ScrollToTop from "../components/ScrollToTop";
@@ -423,7 +423,9 @@ function MainLayout() {
             style={{ paddingTop: isHome ? 0 : "var(--nav-height, 89px)" }}
           >
             {!isHome && <BreadcrumbTabs />}
-            <Outlet />
+            <Suspense fallback={<PageLoader visible={true} />}>
+              <Outlet />
+            </Suspense>
           </main>
           {!isHome && !isShop && <Footer />}
           {isShop && <EmailCapture />}

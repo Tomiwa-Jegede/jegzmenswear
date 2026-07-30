@@ -1,23 +1,25 @@
+import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
-import Home from "./pages/Home";
-import CollectionPage from "./pages/CollectionPage";
-import ProductPage from "./pages/ProductPage";
-import CartPage from "./pages/CartPage";
-import Checkout from "./pages/Checkout";
-import OrderSuccess from "./pages/OrderSuccess";
-import Shop from "./pages/Shop";
-import Info from "./pages/Info";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminHome from "./pages/admin/AdminHome";
-import AdminHeroImages from "./pages/admin/AdminHeroImages";
-import AdminCampaignImages from "./pages/admin/AdminCampaignImages";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminCollections from "./pages/admin/AdminCollections";
-import AdminSiteContent from "./pages/admin/AdminSiteContent";
-import AdminMusic from "./pages/admin/AdminMusic";
-import AdminOrders from "./pages/admin/AdminOrders";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+
+const Home = lazy(() => import("./pages/Home"));
+const CollectionPage = lazy(() => import("./pages/CollectionPage"));
+const ProductPage = lazy(() => import("./pages/ProductPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
+const Shop = lazy(() => import("./pages/Shop"));
+const Info = lazy(() => import("./pages/Info"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
+const AdminHeroImages = lazy(() => import("./pages/admin/AdminHeroImages"));
+const AdminCampaignImages = lazy(() => import("./pages/admin/AdminCampaignImages"));
+const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminCollections = lazy(() => import("./pages/admin/AdminCollections"));
+const AdminSiteContent = lazy(() => import("./pages/admin/AdminSiteContent"));
+const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const router = createBrowserRouter([
   {
     path: "/",
