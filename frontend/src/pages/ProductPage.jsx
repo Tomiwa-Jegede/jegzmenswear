@@ -152,7 +152,7 @@ function ProductPage() {
         <p className="font-sans text-lg text-ink/70 mb-6">
           ₦{Number(product.price).toLocaleString()}
         </p>
-        <p className="font-sans text-ink/70 mb-8">{product.description}</p>
+        <p className="font-sans text-ink/70 mb-8 whitespace-pre-line">{product.description}</p>
 
         <div className="mb-8">
           <p className="font-sans text-xs uppercase tracking-[0.2em] text-ink/50 mb-3">

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import onfleekLogoDark from "../assets/onfleek-logo-dark.png";
+
 
 export function IconInstagram({ className = "" }) {
   return (
@@ -54,7 +54,9 @@ function Footer() {
     <footer className="border-t border-ink/10 bg-offwhite px-6 py-16 sm:px-10 lg:px-16">
       <div className="flex flex-col items-center gap-8">
         <Link to="/" className="inline-block">
-          <img src={onfleekLogoDark} alt="Onfleek" className="w-32 h-auto" />
+          <span className="font-bold tracking-wide text-lg text-ink">
+            JEGZ MENS WEAR
+          </span>
         </Link>
         <Link
           to="/info"

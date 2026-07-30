@@ -8,7 +8,7 @@ function OrderSuccess() {
         Thank you for your order. We'll be in touch with delivery updates shortly.
       </p>
       <Link
-        to="/"
+        to="/shop"
         className="text-sm uppercase tracking-[0.2em] text-ink/60 hover:text-ink"
       >
         Continue Shopping

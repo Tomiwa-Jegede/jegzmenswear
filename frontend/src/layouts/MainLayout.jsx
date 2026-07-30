@@ -7,13 +7,11 @@ import api from "../lib/axios";
 import Footer from "../components/Footer";
 import BreadcrumbTabs from "../components/BreadcrumbTabs";
 import EmailCapture from "../components/EmailCapture";
-import MusicPlayer from "../components/MusicPlayer";
 import CartDrawer from "../components/CartDrawer";
 import MobileNav from "../components/MobileNav";
 import { useCart } from "../context/CartContext";
 import { useAdminAuth } from "../context/AdminAuthContext";
-import onfleekLogoWhite from "../assets/onfleek-logo-white.png";
-import onfleekLogoDark from "../assets/onfleek-logo-dark.png";
+
 import {
   IconHome,
   IconTag,
@@ -238,11 +236,13 @@ function MainLayout() {
               </span>
             </div> */}
             <Link to="/" className="relative z-10 flex items-center">
-              <img
-                src={scrolled ? onfleekLogoDark : onfleekLogoWhite}
-                alt="Onfleek"
-                className="w-52 sm:w-48 h-auto transition-opacity duration-300"
-              />
+              <span
+                className={`font-bold tracking-wide text-xl sm:text-lg transition-colors duration-300 ${
+                  scrolled ? "text-black" : "text-white"
+                }`}
+              >
+                JEGZ MENS WEAR
+              </span>
             </Link>
           </div>
         </div>
@@ -430,7 +430,6 @@ function MainLayout() {
         </>
       )}
       <CartDrawer />
-      <MusicPlayer />
     </div>
   );
 }

@@ -3,7 +3,7 @@ const { generateUniqueSlug } = require("../lib/slugify");
 
 async function getAllProducts(req, res, next) {
   try {
-    const { collection, featured, search, minPrice, maxPrice } = req.query;
+    const { collection, featured, search, minPrice, maxPrice, page, limit } = req.query;
     const where = { isActive: true };
     if (collection) where.collection = { slug: collection };
     if (featured === "true") where.isFeatured = true;
@@ -13,21 +13,32 @@ async function getAllProducts(req, res, next) {
       if (minPrice) where.price.gte = Number(minPrice);
       if (maxPrice) where.price.lte = Number(maxPrice);
     }
-
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        images: { orderBy: { position: "asc" }, take: 1 },
-        collection: { select: { name: true, slug: true } },
-        variants: { select: { stock: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const pageNum = Math.max(1, Number(page) || 1);
+    const pageSize = Math.max(1, Number(limit) || 12);
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          images: { orderBy: { position: "asc" }, take: 1 },
+          collection: { select: { name: true, slug: true } },
+          variants: { select: { stock: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (pageNum - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.product.count({ where }),
+    ]);
     const result = products.map(({ variants, ...p }) => ({
       ...p,
       isFullyOutOfStock: variants.every((v) => v.stock < 1),
     }));
-    res.json(result);
+    res.json({
+      products: result,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      page: pageNum,
+    });
   } catch (err) {
     next(err);
   }

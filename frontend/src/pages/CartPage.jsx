@@ -44,7 +44,7 @@ function CartPage() {
       <div className="px-6 py-20 text-center">
         <h1 className="font-serif text-3xl text-ink mb-4">Your Cart is Empty</h1>
         <Link
-          to="/"
+          to="/shop"
           className="text-sm uppercase tracking-[0.2em] text-ink/60 hover:text-ink"
         >
           Continue Shopping

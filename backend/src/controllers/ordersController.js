@@ -13,14 +13,14 @@ const orderInclude = {
   },
 };
 
-function verifyPaystackTransaction(reference) {
+function verifyFlutterwaveTransaction(transactionId) {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: "api.paystack.co",
-      path: `/transaction/verify/${encodeURIComponent(reference)}`,
+      hostname: "api.flutterwave.com",
+      path: `/v3/transactions/${encodeURIComponent(transactionId)}/verify`,
       method: "GET",
       headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
       },
     };
 
@@ -111,7 +111,7 @@ async function createOrder(req, res, next) {
     const totalAmount = subtotal + DELIVERY_FEE;
 
     const existingOrder = await prisma.order.findUnique({
-      where: { paymentReference },
+      where: { paymentReference: String(paymentReference) },
     });
     if (existingOrder) {
       const err = new Error("This payment reference has already been used");
@@ -119,14 +119,23 @@ async function createOrder(req, res, next) {
       throw err;
     }
 
-    const verification = await verifyPaystackTransaction(paymentReference);
-    if (!verification.status || verification.data?.status !== "success") {
+    const verification = await verifyFlutterwaveTransaction(paymentReference);
+    if (
+      verification.status !== "success" ||
+      verification.data?.status !== "successful"
+    ) {
       const err = new Error("Payment could not be verified");
       err.status = 402;
       throw err;
     }
 
-    const paidAmountNaira = verification.data.amount / 100;
+    if (verification.data.currency !== "NGN") {
+      const err = new Error("Payment currency does not match order currency");
+      err.status = 402;
+      throw err;
+    }
+
+    const paidAmountNaira = verification.data.amount;
     if (paidAmountNaira < totalAmount - 0.5) {
       const err = new Error("Paid amount does not match order total");
       err.status = 402;
@@ -143,7 +152,7 @@ async function createOrder(req, res, next) {
           subtotal,
           deliveryFee: DELIVERY_FEE,
           totalAmount,
-          paymentReference,
+          paymentReference: String(paymentReference),
           paymentStatus: "PAID",
           orderStatus: "PENDING",
           items: {

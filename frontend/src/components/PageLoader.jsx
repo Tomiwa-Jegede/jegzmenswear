@@ -1,5 +1,3 @@
-import onfleekIcon from "../assets/favicon-1.svg";
-
 function PageLoader({ visible }) {
   return (
     <div
@@ -16,23 +14,45 @@ function PageLoader({ visible }) {
         transition: "opacity 0.35s ease",
       }}
     >
-      <img
-        src={onfleekIcon}
-        alt="Loading"
+      <svg
+        viewBox="0 0 72 72"
+        role="status"
+        aria-label="Loading"
         style={{
           width: 72,
           height: 72,
-          animation: "onfleek-heartbeat 1.2s ease-in-out infinite",
+          color: "var(--color-ink, #1a1a1a)",
         }}
-      />
+      >
+        <circle
+          cx="36"
+          cy="36"
+          r="26"
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity="0.15"
+          strokeWidth="1.5"
+        />
+        <circle
+          cx="36"
+          cy="36"
+          r="26"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeDasharray="163.4"
+          style={{
+            transformOrigin: "36px 36px",
+            animation: "onfleek-draw 1.6s ease-in-out infinite",
+          }}
+        />
+      </svg>
       <style>{`
-        @keyframes onfleek-heartbeat {
-          0%   { transform: scale(1);    }
-          14%  { transform: scale(1.18); }
-          28%  { transform: scale(1);    }
-          42%  { transform: scale(1.12); }
-          56%  { transform: scale(1);    }
-          100% { transform: scale(1);    }
+        @keyframes onfleek-draw {
+          0%   { stroke-dashoffset: 163.4; transform: rotate(0deg); }
+          50%  { stroke-dashoffset: 40.85; transform: rotate(180deg); }
+          100% { stroke-dashoffset: 163.4; transform: rotate(360deg); }
         }
       `}</style>
     </div>

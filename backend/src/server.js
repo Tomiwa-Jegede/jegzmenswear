@@ -37,7 +37,13 @@ const corsOptions =
       }
     : {
         origin: (origin, callback) => {
-          if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+          console.log("DEV CORS origin received:", JSON.stringify(origin));
+          console.log("DEV_ALLOWED_ORIGIN is:", JSON.stringify(process.env.DEV_ALLOWED_ORIGIN));
+          if (
+            !origin ||
+            /^http:\/\/localhost:\d+$/.test(origin) ||
+            origin === process.env.DEV_ALLOWED_ORIGIN
+          ) {
             return callback(null, true);
           }
           callback(new Error("Not allowed by CORS"));

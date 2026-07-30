@@ -22,7 +22,7 @@ export function ToastProvider({ children }) {
             key={t.id}
             className={`px-6 py-3 text-sm uppercase tracking-[0.15em] shadow-lg pointer-events-auto transition-all duration-300 ${
               t.type === "success"
-                ? "bg-ink text-offwhite"
+                ? "bg-emerald-700 text-white"
                 : "bg-red-600 text-white"
             }`}
           >

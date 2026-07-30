@@ -9,9 +9,16 @@ html {
 html::-webkit-scrollbar {
   display: none;
 }
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 
 /* Global border-radius for every bordered element site-wide */
-[class*="border"] {
+[class*="border"]:not([class*="rounded-full"]) {
   border-radius: 8px;
 }
 

@@ -3,8 +3,8 @@ const prisma = require("../lib/prisma");
 async function createProductVariant(req, res, next) {
   try {
     const { size, color, sku, stock } = req.body;
-    if (!size || !sku) {
-      const err = new Error("size and sku are required");
+    if (!sku) {
+      const err = new Error("sku is required");
       err.status = 400;
       throw err;
     }

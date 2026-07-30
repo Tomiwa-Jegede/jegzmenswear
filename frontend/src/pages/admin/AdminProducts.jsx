@@ -23,7 +23,7 @@ function generateSKU(name, size, color) {
 }
 
 const emptyVariantForm = {
-  size: "M",
+  size: "",
   color: "",
   sku: "",
   stock: 0,
@@ -33,23 +33,63 @@ const emptyProductForm = {
   name: "",
   description: "",
   price: "",
+  collectionId: "",
   isFeatured: false,
   isActive: true,
 };
 
 function AdminProducts() {
+  const PRODUCT_DRAFT_STORAGE_KEY = "onfleek_admin_product_draft";
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [view, setView] = useState("list"); // "list" | "form"
-  const [createStep, setCreateStep] = useState(1); // 1 | 2 | 3 — only used when !activeProduct
-  const [pendingVariants, setPendingVariants] = useState([]); // local variants before product exists
+  const [view, setView] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PRODUCT_DRAFT_STORAGE_KEY);
+      return saved ? JSON.parse(saved).view || "list" : "list";
+    } catch {
+      return "list";
+    }
+  }); // "list" | "form"
+  const [createStep, setCreateStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PRODUCT_DRAFT_STORAGE_KEY);
+      return saved ? JSON.parse(saved).createStep || 1 : 1;
+    } catch {
+      return 1;
+    }
+  }); // 1 | 2 | 3 — only used when !activeProduct
+  const [pendingVariants, setPendingVariants] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PRODUCT_DRAFT_STORAGE_KEY);
+      return saved ? JSON.parse(saved).pendingVariants || [] : [];
+    } catch {
+      return [];
+    }
+  }); // local variants before product exists
   const [activeProduct, setActiveProduct] = useState(null); // full product record while editing
-  const [form, setForm] = useState(emptyProductForm);
-  const [variantForm, setVariantForm] = useState(emptyVariantForm);
+  const [form, setForm] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PRODUCT_DRAFT_STORAGE_KEY);
+      return saved ? JSON.parse(saved).form || emptyProductForm : emptyProductForm;
+    } catch {
+      return emptyProductForm;
+    }
+  });
+  const [variantForm, setVariantForm] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PRODUCT_DRAFT_STORAGE_KEY);
+      return saved
+        ? JSON.parse(saved).variantForm || emptyVariantForm
+        : emptyVariantForm;
+    } catch {
+      return emptyVariantForm;
+    }
+  });
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [bulkStockValue, setBulkStockValue] = useState("");
   const [variantEdits, setVariantEdits] = useState({}); // { [variantId]: {size,color,sku,stock} }
   const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [imageFilePreviewUrl, setImageFilePreviewUrl] = useState(null);
 
@@ -60,6 +100,7 @@ function AdminProducts() {
   const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [filterCollectionId, setFilterCollectionId] = useState("");
 
   function loadProducts() {
     api
@@ -81,11 +122,20 @@ function AdminProducts() {
     loadCollections();
   }, []);
 
+  useEffect(() => {
+    if (activeProduct) return; // don't persist edits to existing products as a draft
+    try {
+      localStorage.setItem(
+        PRODUCT_DRAFT_STORAGE_KEY,
+        JSON.stringify({ form, pendingVariants, variantForm, view, createStep }),
+      );
+    } catch {
+      // localStorage unavailable — ignore, form still works in-memory
+    }
+  }, [form, pendingVariants, variantForm, activeProduct, view, createStep]);
+
   function startCreate() {
     setActiveProduct(null);
-    setForm(emptyProductForm);
-    setVariantForm(emptyVariantForm);
-    setPendingVariants([]);
     setImageFile(null);
     setImageFilePreviewUrl(null);
     setDesktopFocal(DEFAULT_FOCAL);
@@ -102,6 +152,7 @@ function AdminProducts() {
         name: data.name,
         description: data.description || "",
         price: data.price,
+        collectionId: data.collectionId || "",
         isFeatured: data.isFeatured,
         isActive: data.isActive,
       });
@@ -122,6 +173,7 @@ function AdminProducts() {
   }
 
   function backToList() {
+    localStorage.removeItem(PRODUCT_DRAFT_STORAGE_KEY);
     setView("list");
     setActiveProduct(null);
     setForm(emptyProductForm);
@@ -146,6 +198,7 @@ function AdminProducts() {
           name: form.name,
           description: form.description,
           price: form.price,
+          collectionId: form.collectionId,
           isFeatured: form.isFeatured,
           isActive: form.isActive,
         };
@@ -167,7 +220,6 @@ function AdminProducts() {
 
   function handleAddPendingVariant(e) {
     e.preventDefault();
-    if (!variantForm.size) return;
     const autoSku = generateSKU(
       form.name,
       variantForm.size === "Custom" ? variantForm.customSize : variantForm.size,
@@ -212,7 +264,7 @@ function AdminProducts() {
 
   async function handleFinalCreate(e) {
     e.preventDefault();
-    if (!imageFile) return;
+    if (!imageFile && imageFiles.length === 0) return;
     setSaving(true);
     try {
       // 1. Create product
@@ -220,6 +272,7 @@ function AdminProducts() {
         name: form.name,
         description: form.description,
         price: form.price,
+        collectionId: form.collectionId,
         isFeatured: form.isFeatured,
       });
       // 2. Create all pending variants
@@ -231,17 +284,45 @@ function AdminProducts() {
           stock: Number(v.stock),
         });
       }
-      // 3. Upload image
-      const url = await uploadImageToCloudinary(imageFile);
-      await api.post(`/products/${product.id}/images`, {
-        url,
-        desktopCropMode: `${desktopFocal.focalX}% ${desktopFocal.focalY}%`,
-        desktopZoom: desktopFocal.zoom,
-        mobileCropMode: `${mobileFocal.focalX}% ${mobileFocal.focalY}%`,
-        mobileZoom: mobileFocal.zoom,
-      });
-      // 4. Switch to edit mode for the completed product
-      await startEdit(product.id);
+      // 3. Upload image(s)
+      if (imageFiles.length > 0) {
+        for (let i = 0; i < imageFiles.length; i++) {
+          const url = await uploadImageToCloudinary(imageFiles[i]);
+          await api.post(`/products/${product.id}/images`, {
+            url,
+            position: i,
+            desktopCropMode: "50% 50%",
+            desktopZoom: 1,
+            mobileCropMode: "50% 50%",
+            mobileZoom: 1,
+          });
+        }
+      } else {
+        const url = await uploadImageToCloudinary(imageFile);
+        await api.post(`/products/${product.id}/images`, {
+          url,
+          position: 0,
+          desktopCropMode: `${desktopFocal.focalX}% ${desktopFocal.focalY}%`,
+          desktopZoom: desktopFocal.zoom,
+          mobileCropMode: `${mobileFocal.focalX}% ${mobileFocal.focalY}%`,
+          mobileZoom: mobileFocal.zoom,
+        });
+      }
+      // 4. Product created — clear the draft and return to the product list
+      localStorage.removeItem(PRODUCT_DRAFT_STORAGE_KEY);
+      setForm(emptyProductForm);
+      setVariantForm(emptyVariantForm);
+      setPendingVariants([]);
+      setCreateStep(1);
+      setImageFile(null);
+      setImageFiles([]);
+      setImageFilePreviewUrl(null);
+      setDesktopFocal(DEFAULT_FOCAL);
+      setMobileFocal(DEFAULT_FOCAL);
+      setActiveProduct(null);
+      setView("list");
+      loadProducts();
+      showToast("Product created successfully.", "success");
     } catch (err) {
       showToast(
         "The product could not be created. Please check your details and try again.",
@@ -314,7 +395,20 @@ function AdminProducts() {
 
   // Images
   function handleImageFileChange(e) {
-    const selected = e.target.files[0];
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length > 1) {
+      if (imageFilePreviewUrl) URL.revokeObjectURL(imageFilePreviewUrl);
+      setImageFile(null);
+      setImageFilePreviewUrl(null);
+      if (activeProduct) {
+        handleBatchAddImages(selectedFiles);
+      } else {
+        setImageFiles(selectedFiles);
+      }
+      return;
+    }
+    setImageFiles([]);
+    const selected = selectedFiles[0] || null;
     setImageFile(selected);
     if (imageFilePreviewUrl) URL.revokeObjectURL(imageFilePreviewUrl);
     setImageFilePreviewUrl(selected ? URL.createObjectURL(selected) : null);
@@ -322,14 +416,46 @@ function AdminProducts() {
     setMobileFocal(DEFAULT_FOCAL);
   }
 
+  async function handleBatchAddImages(files) {
+    if (!activeProduct) return;
+    setUploading(true);
+    try {
+      const startPosition =
+        activeProduct.images.length > 0
+          ? Math.max(...activeProduct.images.map((img) => img.position)) + 1
+          : 0;
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadImageToCloudinary(files[i]);
+        await api.post(`/products/${activeProduct.id}/images`, {
+          url,
+          position: startPosition + i,
+          desktopCropMode: "50% 50%",
+          desktopZoom: 1,
+          mobileCropMode: "50% 50%",
+          mobileZoom: 1,
+        });
+      }
+      await startEdit(activeProduct.id);
+    } catch (err) {
+      showToast("Some images could not be uploaded. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleAddImage(e) {
     e.preventDefault();
     if (!activeProduct || !imageFile) return;
     setUploading(true);
     try {
+      const nextPosition =
+        activeProduct.images.length > 0
+          ? Math.max(...activeProduct.images.map((img) => img.position)) + 1
+          : 0;
       const url = await uploadImageToCloudinary(imageFile);
       await api.post(`/products/${activeProduct.id}/images`, {
         url,
+        position: nextPosition,
         desktopCropMode: `${desktopFocal.focalX}% ${desktopFocal.focalY}%`,
         desktopZoom: desktopFocal.zoom,
         mobileCropMode: `${mobileFocal.focalX}% ${mobileFocal.focalY}%`,
@@ -396,8 +522,29 @@ function AdminProducts() {
             New Product
           </button>
         </div>
+        <div className="mb-6 max-w-xs">
+          <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+            Filter by Collection
+          </label>
+          <select
+            value={filterCollectionId}
+            onChange={(e) => setFilterCollectionId(e.target.value)}
+            className="w-full border border-ink/20 px-4 py-2 text-sm bg-offwhite"
+          >
+            <option value="">All Collections</option>
+            {collections.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <ul className="space-y-4">
-          {products.map((p) => (
+          {products
+            .filter((p) =>
+              filterCollectionId ? p.collectionId === filterCollectionId : true,
+            )
+            .map((p) => (
             <li
               key={p.id}
               className="flex flex-col sm:flex-row sm:items-center gap-4 border border-ink/10 p-4"
@@ -526,6 +673,26 @@ function AdminProducts() {
                 required
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+              Collection <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={form.collectionId}
+              onChange={(e) =>
+                setForm({ ...form, collectionId: e.target.value })
+              }
+              className="w-full border border-ink/20 px-4 py-2 text-sm bg-offwhite"
+              required
+            >
+              <option value="">Select a collection</option>
+              {collections.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">
@@ -676,8 +843,8 @@ function AdminProducts() {
                 })
               }
               className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24 bg-offwhite"
-              required
             >
+              <option value="">No size</option>
               {SIZES.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -757,7 +924,11 @@ function AdminProducts() {
             htmlFor="product-image-file"
             className="flex flex-col items-center justify-center w-32 aspect-[4/5] border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
           >
-            {imageFile ? (
+            {imageFiles.length > 0 ? (
+              <span className="text-xs text-center px-2 break-all">
+                {imageFiles.length} images selected
+              </span>
+            ) : imageFile ? (
               <span className="text-xs text-center px-2 break-all">
                 {imageFile.name}
               </span>
@@ -784,6 +955,7 @@ function AdminProducts() {
             id="product-image-file"
             type="file"
             accept="image/*"
+            multiple
             onChange={handleImageFileChange}
             className="hidden"
             required
@@ -820,7 +992,7 @@ function AdminProducts() {
             </button>
             <button
               type="submit"
-              disabled={saving || !imageFile}
+              disabled={saving || (!imageFile && imageFiles.length === 0)}
               className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {saving ? "Creating..." : "Create Product"}
@@ -900,8 +1072,8 @@ function AdminProducts() {
                   })
                 }
                 className="border border-ink/20 px-2 py-1 text-sm w-full sm:w-24 bg-offwhite"
-                required
               >
+                <option value="">No size</option>
                 {SIZES.map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -985,7 +1157,11 @@ function AdminProducts() {
                 htmlFor="product-image-file"
                 className="flex flex-col items-center justify-center w-32 aspect-[4/5] border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
               >
-                {imageFile ? (
+                {uploading && !imageFile ? (
+                  <span className="text-xs text-center px-2 break-all">
+                    Uploading...
+                  </span>
+                ) : imageFile ? (
                   <span className="text-xs text-center px-2 break-all">
                     {imageFile.name}
                   </span>
@@ -1014,6 +1190,7 @@ function AdminProducts() {
                 id="product-image-file"
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageFileChange}
                 className="hidden"
                 required

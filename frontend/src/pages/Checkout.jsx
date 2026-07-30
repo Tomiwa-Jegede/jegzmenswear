@@ -5,16 +5,16 @@ import { useToast } from "../context/ToastContext";
 import api from "../lib/axios";
 
 const DELIVERY_FEE = 3000; // NGN — keep in sync with backend DELIVERY_FEE constant
-const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+const FLUTTERWAVE_PUBLIC_KEY = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY;
 
-function loadPaystackScript() {
+function loadFlutterwaveScript() {
   return new Promise((resolve, reject) => {
-    if (window.PaystackPop) {
+    if (window.FlutterwaveCheckout) {
       resolve();
       return;
     }
     const script = document.createElement("script");
-    script.src = "https://js.paystack.co/v1/inline.js";
+    script.src = "https://checkout.flutterwave.com/v3.js";
     script.onload = resolve;
     script.onerror = reject;
     document.head.appendChild(script);
@@ -46,17 +46,33 @@ function Checkout() {
     : null;
   const effectiveSubtotal = buyNowItem ? buyNowSubtotal : subtotal;
 
-  const [form, setForm] = useState({
-    customerName: "",
-    phoneNumber: "",
-    customerEmail: "",
-    deliveryAddress: "",
+  const CHECKOUT_FORM_STORAGE_KEY = "onfleek_checkout_form";
+  const [form, setForm] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CHECKOUT_FORM_STORAGE_KEY);
+      return saved
+        ? JSON.parse(saved)
+        : {
+            customerName: "",
+            phoneNumber: "",
+            customerEmail: "",
+            deliveryAddress: "",
+          };
+    } catch {
+      return {
+        customerName: "",
+        phoneNumber: "",
+        customerEmail: "",
+        deliveryAddress: "",
+      };
+    }
   });
   const [submitting, setSubmitting] = useState(false);
   const [scriptReady, setScriptReady] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
-    loadPaystackScript()
+    loadFlutterwaveScript()
       .then(() => setScriptReady(true))
       .catch(() => showToast("Could not load payment provider. Please refresh and try again."));
   }, [showToast]);
@@ -64,7 +80,15 @@ function Checkout() {
   const grandTotal = effectiveSubtotal + DELIVERY_FEE;
 
   function updateField(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      try {
+        localStorage.setItem(CHECKOUT_FORM_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // localStorage unavailable — ignore, form still works in-memory
+      }
+      return next;
+    });
   }
 
   function isFormValid() {
@@ -78,10 +102,10 @@ function Checkout() {
 
   function handlePay() {
     if (!isFormValid()) {
-      showToast("Please fill in all delivery information fields.");
+      setShowErrors(true);
       return;
     }
-    if (!scriptReady || !window.PaystackPop) {
+    if (!scriptReady || !window.FlutterwaveCheckout) {
       showToast("Payment provider is still loading. Please try again in a moment.");
       return;
     }
@@ -92,20 +116,30 @@ function Checkout() {
 
     setSubmitting(true);
 
-    const handler = window.PaystackPop.setup({
-      key: PAYSTACK_PUBLIC_KEY,
-      email: form.customerEmail.trim(),
-      amount: Math.round(grandTotal * 100),
+    const txRef = `onfleek-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    window.FlutterwaveCheckout({
+      public_key: FLUTTERWAVE_PUBLIC_KEY,
+      tx_ref: txRef,
+      amount: grandTotal,
       currency: "NGN",
-      callback: (response) => {
-        finalizeOrder(response.reference);
+      payment_options: "card, banktransfer, ussd",
+      customer: {
+        email: form.customerEmail.trim(),
+        phone_number: form.phoneNumber.trim(),
+        name: form.customerName.trim(),
       },
-      onClose: () => {
+      callback: (data) => {
+        if (data.status === "successful" || data.status === "completed") {
+          finalizeOrder(data.transaction_id);
+        } else {
+          setSubmitting(false);
+        }
+      },
+      onclose: () => {
         setSubmitting(false);
       },
     });
-
-    handler.openIframe();
   }
 
   async function finalizeOrder(paymentReference) {
@@ -121,6 +155,7 @@ function Checkout() {
       if (!buyNowItem) {
         await refreshCart();
       }
+      localStorage.removeItem(CHECKOUT_FORM_STORAGE_KEY);
       showToast("Payment successful! Your order has been placed.", "success");
       navigate("/order-success");
     } catch (err) {
@@ -166,7 +201,11 @@ function Checkout() {
               type="text"
               value={form.customerName}
               onChange={(e) => updateField("customerName", e.target.value)}
-              className="w-full border border-ink/20 px-4 py-2 text-sm"
+              className={`w-full border px-4 py-2 text-sm ${
+                showErrors && !form.customerName.trim()
+                  ? "border-red-600"
+                  : "border-ink/20"
+              }`}
               required
             />
           </div>
@@ -178,7 +217,11 @@ function Checkout() {
               type="tel"
               value={form.phoneNumber}
               onChange={(e) => updateField("phoneNumber", e.target.value)}
-              className="w-full border border-ink/20 px-4 py-2 text-sm"
+              className={`w-full border px-4 py-2 text-sm ${
+                showErrors && !form.phoneNumber.trim()
+                  ? "border-red-600"
+                  : "border-ink/20"
+              }`}
               required
             />
           </div>
@@ -190,7 +233,11 @@ function Checkout() {
               type="email"
               value={form.customerEmail}
               onChange={(e) => updateField("customerEmail", e.target.value)}
-              className="w-full border border-ink/20 px-4 py-2 text-sm"
+              className={`w-full border px-4 py-2 text-sm ${
+                showErrors && !form.customerEmail.trim()
+                  ? "border-red-600"
+                  : "border-ink/20"
+              }`}
               required
             />
           </div>
@@ -201,7 +248,11 @@ function Checkout() {
             <textarea
               value={form.deliveryAddress}
               onChange={(e) => updateField("deliveryAddress", e.target.value)}
-              className="w-full border border-ink/20 px-4 py-2 text-sm"
+              className={`w-full border px-4 py-2 text-sm ${
+                showErrors && !form.deliveryAddress.trim()
+                  ? "border-red-600"
+                  : "border-ink/20"
+              }`}
               rows={3}
               required
             />
@@ -244,7 +295,7 @@ function Checkout() {
         disabled={submitting}
         className="w-full bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
       >
-        {submitting ? "Processing..." : "Pay with Paystack"}
+        {submitting ? "Processing..." : "Pay with Flutterwave"}
       </button>
     </div>
   );

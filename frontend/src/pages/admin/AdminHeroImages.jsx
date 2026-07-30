@@ -81,10 +81,43 @@ function AdminHeroImages() {
   );
 
   function handleFileChange(e) {
-    const selected = e.target.files[0];
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length > 1) {
+      handleBatchUpload(selectedFiles);
+      e.target.value = "";
+      return;
+    }
+    const selected = selectedFiles[0] || null;
     setFile(selected);
     if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
     setFilePreviewUrl(selected ? URL.createObjectURL(selected) : null);
+  }
+
+  async function handleBatchUpload(files) {
+    setUploading(true);
+    try {
+      const emptySlots = [];
+      let slot = 0;
+      while (emptySlots.length < files.length) {
+        if (!usedPositions.includes(slot)) emptySlots.push(slot);
+        slot++;
+      }
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadImageToCloudinary(files[i]);
+        await api.post("/hero-images", {
+          url,
+          altText: "",
+          position: emptySlots[i],
+          desktopCropMode: "center center",
+          mobileCropMode: "center center",
+        });
+      }
+      loadImages();
+    } catch (err) {
+      showToast("Something went wrong. Some images could not be saved. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function loadImages() {
@@ -188,7 +221,11 @@ function AdminHeroImages() {
             htmlFor="hero-image-file"
             className="flex flex-col items-center justify-center w-32 h-32 border border-dashed border-ink/30 cursor-pointer hover:border-ink/60 transition-colors text-ink/40 hover:text-ink/70"
           >
-            {file ? (
+            {uploading && !file ? (
+              <span className="text-xs text-center px-2 break-all">
+                Uploading...
+              </span>
+            ) : file ? (
               <span className="text-xs text-center px-2 break-all">
                 {file.name}
               </span>
@@ -200,6 +237,7 @@ function AdminHeroImages() {
             id="hero-image-file"
             type="file"
             accept="image/*"
+            multiple={!editingImage}
             onChange={handleFileChange}
             className="hidden"
             required={!editingImage}
