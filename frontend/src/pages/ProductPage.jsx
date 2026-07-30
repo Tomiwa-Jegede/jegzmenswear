@@ -113,6 +113,25 @@ function ProductPage() {
           content={product.description ? product.description.slice(0, 160) : `Shop ${product.name} at Jegzmenswear.`}
         />
         {product.images?.[0] && <meta property="og:image" content={product.images[0].url} />}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            description: product.description,
+            image: product.images?.map((img) => img.url) || [],
+            sku: product.id,
+            offers: {
+              "@type": "Offer",
+              url: `https://jegzmenswear.store/products/${product.slug}`,
+              priceCurrency: "NGN",
+              price: Number(product.price),
+              availability: product.variants?.some((v) => v.stock > 0)
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+            },
+          })}
+        </script>
       </Helmet>
     <div className="px-6 py-12 grid gap-10 md:grid-cols-2 max-w-5xl mx-auto">
       <div>

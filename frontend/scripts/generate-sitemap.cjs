@@ -4,14 +4,24 @@ const path = require("path");
 const SITE_URL = "https://jegzmenswear.store";
 const API_URL = "https://jegzmenswear.onrender.com/api";
 
+async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 5000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fetch(url, options);
+    } catch (err) {
+      if (attempt === retries) throw err;
+      console.log(`Fetch attempt ${attempt} failed for ${url}, retrying in ${delayMs / 1000}s...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 async function fetchAllProducts() {
   const products = [];
   let page = 1;
   let totalPages = 1;
   do {
-    const res = await fetch(`${API_URL}/products?page=${page}&limit=100`, {
-      signal: AbortSignal.timeout(30000),
-    });
+    const res = await fetchWithRetry(`${API_URL}/products?page=${page}&limit=100`);
     if (!res.ok) throw new Error(`Failed to fetch products page ${page}: ${res.status}`);
     const data = await res.json();
     products.push(...data.products);
@@ -22,9 +32,7 @@ async function fetchAllProducts() {
 }
 
 async function fetchAllCollections() {
-  const res = await fetch(`${API_URL}/collections`, {
-    signal: AbortSignal.timeout(30000),
-  });
+  const res = await fetchWithRetry(`${API_URL}/collections`);
   if (!res.ok) throw new Error(`Failed to fetch collections: ${res.status}`);
   return res.json();
 }
