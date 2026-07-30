@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import api from "../lib/axios";
 import { useCart } from "../context/CartContext";
 import Skeleton from "../components/ui/Skeleton";
@@ -98,6 +99,21 @@ function ProductPage() {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>{`${product.name} | Jegzmenswear`}</title>
+        <meta
+          name="description"
+          content={product.description ? product.description.slice(0, 160) : `Shop ${product.name} at Jegzmenswear.`}
+        />
+        <link rel="canonical" href={`https://jegzmenswear.store/products/${product.slug}`} />
+        <meta property="og:title" content={`${product.name} | Jegzmenswear`} />
+        <meta
+          property="og:description"
+          content={product.description ? product.description.slice(0, 160) : `Shop ${product.name} at Jegzmenswear.`}
+        />
+        {product.images?.[0] && <meta property="og:image" content={product.images[0].url} />}
+      </Helmet>
     <div className="px-6 py-12 grid gap-10 md:grid-cols-2 max-w-5xl mx-auto">
       <div>
         <div className="bg-cream aspect-[3/4] overflow-hidden relative">
@@ -202,6 +218,7 @@ function ProductPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import api from "../lib/axios";
 import Skeleton from "../components/ui/Skeleton";
 import FadeImage from "../components/FadeImage";
@@ -39,6 +40,20 @@ function CollectionPage() {
   }
 
   return (
+    <>
+      <Helmet>
+        <title>{`${collection.name} | Jegzmenswear`}</title>
+        <meta
+          name="description"
+          content={collection.description ? collection.description.slice(0, 160) : `Shop the ${collection.name} collection at Jegzmenswear.`}
+        />
+        <link rel="canonical" href={`https://jegzmenswear.store/collections/${collection.slug}`} />
+        <meta property="og:title" content={`${collection.name} | Jegzmenswear`} />
+        <meta
+          property="og:description"
+          content={collection.description ? collection.description.slice(0, 160) : `Shop the ${collection.name} collection at Jegzmenswear.`}
+        />
+      </Helmet>
     <div className="px-6 py-12">
       <h1 className="font-serif text-4xl text-ink mb-2">{collection.name}</h1>
       {collection.description && (
@@ -83,6 +98,7 @@ function CollectionPage() {
         ))}
       </ul>
     </div>
+    </>
   );
 }
 

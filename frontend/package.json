@@ -20,6 +20,7 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-easy-crop": "^6.1.0",
+    "react-helmet-async": "^3.0.0",
     "react-router-dom": "^7.18.0",
     "tailwindcss": "^4.3.1",
     "three": "^0.184.0"
