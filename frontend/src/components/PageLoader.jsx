@@ -14,45 +14,40 @@ function PageLoader({ visible }) {
         transition: "opacity 0.35s ease",
       }}
     >
-      <svg
-        viewBox="0 0 72 72"
+      <div
         role="status"
         aria-label="Loading"
         style={{
-          width: 72,
-          height: 72,
-          color: "var(--color-ink, #1a1a1a)",
+          width: 160,
+          height: 160,
+          backgroundColor: "var(--color-ink, #1a1a1a)",
+          WebkitMaskImage: "url(/jegz-black-logo.png)",
+          maskImage: "url(/jegz-black-logo.png)",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <circle
-          cx="36"
-          cy="36"
-          r="26"
-          fill="none"
-          stroke="currentColor"
-          strokeOpacity="0.15"
-          strokeWidth="1.5"
-        />
-        <circle
-          cx="36"
-          cy="36"
-          r="26"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeDasharray="163.4"
+        <div
           style={{
-            transformOrigin: "36px 36px",
-            animation: "onfleek-draw 1.6s ease-in-out infinite",
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(115deg, transparent 35%, var(--color-offwhite, #f9f6f1) 50%, transparent 65%)",
+            backgroundSize: "300% 100%",
+            animation: "jegz-shimmer 1.8s ease-in-out infinite",
           }}
         />
-      </svg>
+      </div>
       <style>{`
-        @keyframes onfleek-draw {
-          0%   { stroke-dashoffset: 163.4; transform: rotate(0deg); }
-          50%  { stroke-dashoffset: 40.85; transform: rotate(180deg); }
-          100% { stroke-dashoffset: 163.4; transform: rotate(360deg); }
+        @keyframes jegz-shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -100% 0; }
         }
       `}</style>
     </div>
