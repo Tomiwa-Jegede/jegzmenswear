@@ -239,7 +239,7 @@ function MainLayout() {
               <img
                 src={scrolled ? "/jegz-black-logo.png" : "/jegz-white-logo.png"}
                 alt="Jegzmenswear"
-                className="h-24 sm:h-20 w-auto"
+                className="h-16 sm:h-24 w-auto"
               />
             </Link>
           </div>
