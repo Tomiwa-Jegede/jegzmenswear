@@ -236,13 +236,11 @@ function MainLayout() {
               </span>
             </div> */}
             <Link to="/" className="relative z-10 flex items-center">
-              <span
-                className={`font-bold tracking-wide text-xl sm:text-lg transition-colors duration-300 ${
-                  scrolled ? "text-black" : "text-white"
-                }`}
-              >
-                JEGZ MENS WEAR
-              </span>
+              <img
+                src={scrolled ? "/jegz-black-logo.png" : "/jegz-white-logo.png"}
+                alt="Jegzmenswear"
+                className="h-8 sm:h-7 w-auto"
+              />
             </Link>
           </div>
         </div>

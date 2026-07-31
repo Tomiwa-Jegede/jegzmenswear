@@ -54,9 +54,7 @@ function Footer() {
     <footer className="border-t border-ink/10 bg-offwhite px-6 py-16 sm:px-10 lg:px-16">
       <div className="flex flex-col items-center gap-8">
         <Link to="/" className="inline-block">
-          <span className="font-bold tracking-wide text-lg text-ink">
-            JEGZ MENS WEAR
-          </span>
+          <img src="/jegz-black-logo.png" alt="Jegzmenswear" className="h-8 w-auto" />
         </Link>
         <Link
           to="/info"

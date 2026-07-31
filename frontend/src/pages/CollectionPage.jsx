@@ -53,6 +53,24 @@ function CollectionPage() {
           property="og:description"
           content={collection.description ? collection.description.slice(0, 160) : `Shop the ${collection.name} collection at Jegzmenswear.`}
         />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: collection.name,
+            description: collection.description,
+            url: `https://jegzmenswear.store/collections/${collection.slug}`,
+            mainEntity: {
+              "@type": "ItemList",
+              itemListElement: collection.products.map((p, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                url: `https://jegzmenswear.store/products/${p.slug}`,
+                name: p.name,
+              })),
+            },
+          })}
+        </script>
       </Helmet>
     <div className="px-6 py-12">
       <h1 className="font-serif text-4xl text-ink mb-2">{collection.name}</h1>
