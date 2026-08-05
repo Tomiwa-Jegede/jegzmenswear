@@ -8,6 +8,7 @@ import Footer from "../components/Footer";
 import BreadcrumbTabs from "../components/BreadcrumbTabs";
 import EmailCapture from "../components/EmailCapture";
 import CartDrawer from "../components/CartDrawer";
+import WhatsAppBubble from "../components/WhatsAppBubble";
 import MobileNav from "../components/MobileNav";
 import { useCart } from "../context/CartContext";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -430,6 +431,7 @@ function MainLayout() {
         </>
       )}
       <CartDrawer />
+      {!showMaintenance && <WhatsAppBubble />}
     </div>
   );
 }
