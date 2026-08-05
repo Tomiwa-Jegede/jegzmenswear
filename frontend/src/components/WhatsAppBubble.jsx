@@ -3,7 +3,7 @@ function WhatsAppBubble() {
   if (!number) return null;
 
   return (
-    
+    <a
       href={`https://wa.me/${number}`}
       target="_blank"
       rel="noopener noreferrer"
