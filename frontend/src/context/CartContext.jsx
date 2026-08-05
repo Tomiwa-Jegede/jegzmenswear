@@ -33,6 +33,23 @@ export function CartProvider({ children }) {
     const res = await api.post("/cart/items", { variantId, quantity });
     setCart(res.data);
     setIsOpen(true);
+    if (typeof window.gtag === "function") {
+      const item = res.data.items.find((i) => i.variant.id === variantId);
+      if (item) {
+        window.gtag("event", "add_to_cart", {
+          currency: "NGN",
+          value: Number(item.variant.product.price) * quantity,
+          items: [
+            {
+              item_id: item.variant.product.id,
+              item_name: item.variant.product.name,
+              price: Number(item.variant.product.price),
+              quantity,
+            },
+          ],
+        });
+      }
+    }
   };
 
   const updateQuantity = async (itemId, quantity) => {

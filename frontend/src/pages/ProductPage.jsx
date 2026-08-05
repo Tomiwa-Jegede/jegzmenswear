@@ -31,6 +31,22 @@ function ProductPage() {
       .catch(console.error);
   }, [slug]);
 
+  useEffect(() => {
+    if (!product || typeof window.gtag !== "function") return;
+    window.gtag("event", "view_item", {
+      currency: "NGN",
+      value: Number(product.price),
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_category: product.collection?.name,
+          price: Number(product.price),
+        },
+      ],
+    });
+  }, [product]);
+
   if (!product) {
   return (
     <div className="px-6 py-12 grid gap-10 md:grid-cols-2 max-w-5xl mx-auto animate-pulse">
@@ -85,6 +101,20 @@ function ProductPage() {
 
   const handleBuyNow = () => {
     if (!selectedVariant || selectedVariant.stock < 1) return;
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "add_to_cart", {
+        currency: "NGN",
+        value: Number(product.price),
+        items: [
+          {
+            item_id: product.id,
+            item_name: product.name,
+            price: Number(product.price),
+            quantity: 1,
+          },
+        ],
+      });
+    }
     navigate("/checkout", {
       state: {
         buyNowItem: {

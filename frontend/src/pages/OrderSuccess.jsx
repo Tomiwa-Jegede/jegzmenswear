@@ -1,6 +1,20 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 function OrderSuccess() {
+  const location = useLocation();
+  const orderData = location.state?.orderData;
+
+  useEffect(() => {
+    if (!orderData || typeof window.gtag !== "function") return;
+    window.gtag("event", "purchase", {
+      transaction_id: orderData.transactionId,
+      currency: "NGN",
+      value: orderData.value,
+      items: orderData.items,
+    });
+  }, [orderData]);
+
   return (
     <div className="px-6 py-24 text-center max-w-lg mx-auto">
       <h1 className="font-serif text-3xl text-ink mb-4">Order Placed</h1>

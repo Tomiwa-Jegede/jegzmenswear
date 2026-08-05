@@ -77,6 +77,20 @@ function Checkout() {
       .catch(() => showToast("Could not load payment provider. Please refresh and try again."));
   }, [showToast]);
 
+  useEffect(() => {
+    if (loading || typeof window.gtag !== "function") return;
+    if (!buyNowItem && cart.items.length === 0) return;
+    window.gtag("event", "begin_checkout", {
+      currency: "NGN",
+      value: effectiveSubtotal + DELIVERY_FEE,
+      items: displayItems.map((item) => ({
+        item_name: item.variant.product.name,
+        price: Number(item.variant.product.price),
+        quantity: item.quantity,
+      })),
+    });
+  }, [loading]);
+
   const grandTotal = effectiveSubtotal + DELIVERY_FEE;
 
   function updateField(field, value) {
@@ -157,7 +171,19 @@ function Checkout() {
       }
       localStorage.removeItem(CHECKOUT_FORM_STORAGE_KEY);
       showToast("Payment successful! Your order has been placed.", "success");
-      navigate("/order-success");
+      navigate("/order-success", {
+        state: {
+          orderData: {
+            transactionId: paymentReference,
+            value: grandTotal,
+            items: displayItems.map((item) => ({
+              item_name: item.variant.product.name,
+              price: Number(item.variant.product.price),
+              quantity: item.quantity,
+            })),
+          },
+        },
+      });
     } catch (err) {
       showToast(
         err.response?.data?.error ||
