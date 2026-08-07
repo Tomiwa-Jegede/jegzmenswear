@@ -98,10 +98,34 @@ function AdminOrders() {
                   </td>
                   <td className="py-3 pr-4 text-ink/70">
                     {expandedId === order.id ? (
-                      <ul className="space-y-1">
+                      <ul className="space-y-3">
                         {order.items.map((item) => (
                           <li key={item.id}>
-                            {item.product?.name || "Deleted product"} × {item.quantity}
+                            <p>
+                              {item.product?.name || "Deleted product"} × {item.quantity}
+                            </p>
+                            {item.measurements && (
+                              <div className="mt-1 pl-3 border-l-2 border-ink/10 text-xs text-ink/60 space-y-0.5">
+                                <p className="uppercase tracking-[0.1em] text-ink/40 mb-1">
+                                  Measurements
+                                </p>
+                                <p>
+                                  Shirt — Length: {item.measurements.shirtLength}, Back:{" "}
+                                  {item.measurements.shirtBack}, Sleeve:{" "}
+                                  {item.measurements.shirtSleeve}, Body:{" "}
+                                  {item.measurements.shirtBody}, Chest:{" "}
+                                  {item.measurements.shirtChest}, Neck:{" "}
+                                  {item.measurements.shirtNeck}, Armpits:{" "}
+                                  {item.measurements.shirtArmpits}
+                                </p>
+                                <p>
+                                  Trouser — Length: {item.measurements.trouserLength}, Waist:{" "}
+                                  {item.measurements.trouserWaist}, Hips:{" "}
+                                  {item.measurements.trouserHips}, Laps:{" "}
+                                  {item.measurements.trouserLaps}
+                                </p>
+                              </div>
+                            )}
                           </li>
                         ))}
                       </ul>

@@ -5,6 +5,8 @@ import api from "../lib/axios";
 import { useCart } from "../context/CartContext";
 import Skeleton from "../components/ui/Skeleton";
 import FadeImage from "../components/FadeImage";
+import MeasurementModal from "../components/MeasurementModal";
+import { loadSavedMeasurements } from "../components/MeasurementForm";
 
 function getFocalPoint(val) {
   return val && val !== "auto" && val !== "manual" ? val : "center center";
@@ -18,6 +20,8 @@ function ProductPage() {
   const [selectedVariantId, setSelectedVariantId] = useState("");
   const [status, setStatus] = useState("idle");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showMeasurementModal, setShowMeasurementModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   useEffect(() => {
     api
@@ -84,12 +88,13 @@ function ProductPage() {
 
   const selectedVariant = product.variants.find((v) => v.id === selectedVariantId);
   const isFullyOutOfStock = product.variants.every((v) => v.stock < 1);
+  const isNative = product.collection?.slug === "native";
 
-  const handleAddToCart = async () => {
+  const performAddToCart = async (measurements) => {
     if (!selectedVariant || selectedVariant.stock < 1) return;
     setStatus("adding");
     try {
-      await addToCart(selectedVariant.id, 1);
+      await addToCart(selectedVariant.id, 1, measurements);
       setStatus("added");
     } catch (err) {
       console.error(err);
@@ -99,7 +104,7 @@ function ProductPage() {
     }
   };
 
-  const handleBuyNow = () => {
+  const performBuyNow = (measurements) => {
     if (!selectedVariant || selectedVariant.stock < 1) return;
     if (typeof window.gtag === "function") {
       window.gtag("event", "add_to_cart", {
@@ -123,9 +128,40 @@ function ProductPage() {
           productName: product.name,
           size: selectedVariant.size,
           price: Number(product.price),
+          measurements,
         },
       },
     });
+  };
+
+  const handleAddToCart = () => {
+    if (!selectedVariant || selectedVariant.stock < 1) return;
+    if (isNative) {
+      setPendingAction("cart");
+      setShowMeasurementModal(true);
+      return;
+    }
+    performAddToCart(undefined);
+  };
+
+  const handleBuyNow = () => {
+    if (!selectedVariant || selectedVariant.stock < 1) return;
+    if (isNative) {
+      setPendingAction("buynow");
+      setShowMeasurementModal(true);
+      return;
+    }
+    performBuyNow(undefined);
+  };
+
+  const handleMeasurementSubmit = (values) => {
+    setShowMeasurementModal(false);
+    if (pendingAction === "cart") {
+      performAddToCart(values);
+    } else if (pendingAction === "buynow") {
+      performBuyNow(values);
+    }
+    setPendingAction(null);
   };
 
   return (
@@ -267,6 +303,16 @@ function ProductPage() {
         )}
       </div>
     </div>
+    <MeasurementModal
+      open={showMeasurementModal}
+      onClose={() => {
+        setShowMeasurementModal(false);
+        setPendingAction(null);
+      }}
+      onSubmit={handleMeasurementSubmit}
+      initialValues={loadSavedMeasurements()}
+      submitLabel={pendingAction === "buynow" ? "Continue to Checkout" : "Add to Cart"}
+    />
     </>
   );
 }

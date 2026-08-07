@@ -29,8 +29,12 @@ export function CartProvider({ children }) {
     refreshCart();
   }, [refreshCart]);
 
-  const addToCart = async (variantId, quantity = 1) => {
-    const res = await api.post("/cart/items", { variantId, quantity });
+  const addToCart = async (variantId, quantity = 1, measurements) => {
+    const res = await api.post("/cart/items", {
+      variantId,
+      quantity,
+      ...(measurements ? { measurements } : {}),
+    });
     setCart(res.data);
     setIsOpen(true);
     if (typeof window.gtag === "function") {
@@ -62,6 +66,13 @@ export function CartProvider({ children }) {
     setCart(res.data);
   };
 
+  const updateMeasurements = async (itemId, measurements) => {
+    const res = await api.put(`/cart/items/${itemId}/measurements`, {
+      measurements,
+    });
+    setCart(res.data);
+  };
+
   const itemCount = cart.items.reduce((sum, i) => sum + i.quantity, 0);
   const subtotal = cart.items.reduce(
     (sum, i) => sum + Number(i.variant.product.price) * i.quantity,
@@ -78,6 +89,7 @@ export function CartProvider({ children }) {
         addToCart,
         updateQuantity,
         removeItem,
+        updateMeasurements,
         refreshCart,
         itemCount,
         subtotal,

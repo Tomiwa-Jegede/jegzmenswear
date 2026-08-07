@@ -74,7 +74,7 @@ async function createOrder(req, res, next) {
       const quantity = Number(buyNowItem.quantity) || 1;
       const variant = await prisma.productVariant.findUnique({
         where: { id: buyNowItem.variantId },
-        include: { product: true },
+        include: { product: { include: { collection: true } } },
       });
       if (!variant) {
         const err = new Error("Product variant not found");
@@ -86,12 +86,23 @@ async function createOrder(req, res, next) {
         err.status = 409;
         throw err;
       }
-      orderItemsSource = [{ variant, quantity }];
+      if (variant.product.collection?.slug === "native" && !buyNowItem.measurements) {
+        const err = new Error("Measurements are required for this product");
+        err.status = 400;
+        throw err;
+      }
+      orderItemsSource = [
+        { variant, quantity, measurements: buyNowItem.measurements },
+      ];
     } else {
       cart = await prisma.cart.findUnique({
         where: { sessionId: req.sessionId },
         include: {
-          items: { include: { variant: { include: { product: true } } } },
+          items: {
+            include: {
+              variant: { include: { product: { include: { collection: true } } } },
+            },
+          },
         },
       });
 
@@ -101,7 +112,23 @@ async function createOrder(req, res, next) {
         throw err;
       }
 
-      orderItemsSource = cart.items;
+      const missingMeasurements = cart.items.find(
+        (i) =>
+          i.variant.product.collection?.slug === "native" && !i.measurements,
+      );
+      if (missingMeasurements) {
+        const err = new Error(
+          "Measurements are required for one or more items in your cart",
+        );
+        err.status = 400;
+        throw err;
+      }
+
+      orderItemsSource = cart.items.map((i) => ({
+        variant: i.variant,
+        quantity: i.quantity,
+        measurements: i.measurements,
+      }));
     }
 
     const subtotal = orderItemsSource.reduce(
@@ -160,6 +187,7 @@ async function createOrder(req, res, next) {
               productId: i.variant.product.id,
               quantity: i.quantity,
               priceAtPurchase: i.variant.product.price,
+              measurements: i.measurements ?? undefined,
             })),
           },
         },

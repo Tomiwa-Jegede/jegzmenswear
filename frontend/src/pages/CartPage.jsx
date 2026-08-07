@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import Skeleton from "../components/ui/Skeleton";
+import MeasurementModal from "../components/MeasurementModal";
 
 function CartPage() {
-  const { cart, loading, updateQuantity, removeItem, subtotal } = useCart();
+  const { cart, loading, updateQuantity, removeItem, updateMeasurements, subtotal } =
+    useCart();
+  const [editingItemId, setEditingItemId] = useState(null);
 
   if (loading) {
   return (
@@ -106,6 +110,14 @@ function CartPage() {
                     </option>
                   ))}
                 </select>
+                {item.variant.product.collection?.slug === "native" && (
+                  <button
+                    onClick={() => setEditingItemId(item.id)}
+                    className="text-xs uppercase tracking-wide text-ink/40 hover:text-ink transition-colors cursor-pointer"
+                  >
+                    Edit Measurements
+                  </button>
+                )}
                 <button
                   onClick={() => removeItem(item.id)}
                   className="text-xs uppercase tracking-wide text-ink/40 hover:text-burgundy transition-colors cursor-pointer"
@@ -117,6 +129,19 @@ function CartPage() {
           </div>
         ))}
       </div>
+
+      <MeasurementModal
+        open={!!editingItemId}
+        onClose={() => setEditingItemId(null)}
+        initialValues={
+          cart.items.find((i) => i.id === editingItemId)?.measurements
+        }
+        submitLabel="Save Measurements"
+        onSubmit={(values) => {
+          updateMeasurements(editingItemId, values);
+          setEditingItemId(null);
+        }}
+      />
 
       <div className="mt-10 flex justify-between items-center border-t border-ink/10 pt-6">
         <span className="text-ink/70 text-sm uppercase tracking-[0.2em]">

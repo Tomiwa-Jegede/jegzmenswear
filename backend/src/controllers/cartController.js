@@ -8,6 +8,7 @@ const cartInclude = {
           product: {
             include: {
               images: { orderBy: { position: "asc" }, take: 1 },
+              collection: { select: { name: true, slug: true } },
             },
           },
         },
@@ -30,7 +31,7 @@ async function getCart(req, res, next) {
 
 async function addItem(req, res, next) {
   try {
-    const { variantId, quantity = 1 } = req.body;
+    const { variantId, quantity = 1, measurements } = req.body;
     if (!variantId || quantity < 1) {
       const err = new Error("variantId and a positive quantity are required");
       err.status = 400;
@@ -39,10 +40,17 @@ async function addItem(req, res, next) {
 
     const variant = await prisma.productVariant.findUnique({
       where: { id: variantId },
+      include: { product: { include: { collection: true } } },
     });
     if (!variant) {
       const err = new Error("Variant not found");
       err.status = 404;
+      throw err;
+    }
+
+    if (variant.product.collection?.slug === "native" && !measurements) {
+      const err = new Error("Measurements are required for this product");
+      err.status = 400;
       throw err;
     }
 
@@ -65,8 +73,11 @@ async function addItem(req, res, next) {
 
     await prisma.cartItem.upsert({
       where: { cartId_variantId: { cartId: cart.id, variantId } },
-      update: { quantity: desiredQty },
-      create: { cartId: cart.id, variantId, quantity },
+      update: {
+        quantity: desiredQty,
+        ...(measurements ? { measurements } : {}),
+      },
+      create: { cartId: cart.id, variantId, quantity, measurements },
     });
 
     const updatedCart = await prisma.cart.findUnique({
@@ -120,6 +131,41 @@ async function updateItem(req, res, next) {
   }
 }
 
+async function updateMeasurements(req, res, next) {
+  try {
+    const { measurements } = req.body;
+    const { itemId } = req.params;
+    if (!measurements) {
+      const err = new Error("measurements are required");
+      err.status = 400;
+      throw err;
+    }
+
+    const item = await prisma.cartItem.findUnique({
+      where: { id: itemId },
+      include: { cart: true },
+    });
+    if (!item || item.cart.sessionId !== req.sessionId) {
+      const err = new Error("Cart item not found");
+      err.status = 404;
+      throw err;
+    }
+
+    await prisma.cartItem.update({
+      where: { id: itemId },
+      data: { measurements },
+    });
+
+    const updatedCart = await prisma.cart.findUnique({
+      where: { id: item.cartId },
+      include: cartInclude,
+    });
+    res.json(updatedCart);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function removeItem(req, res, next) {
   try {
     const { itemId } = req.params;
@@ -144,4 +190,4 @@ async function removeItem(req, res, next) {
   }
 }
 
-module.exports = { getCart, addItem, updateItem, removeItem };
+module.exports = { getCart, addItem, updateItem, removeItem, updateMeasurements };
