@@ -298,7 +298,7 @@ function ProductPage() {
             disabled={status === "adding"}
             className="font-sans w-full bg-transparent borderborder-ink text-ink text-sm uppercase tracking-[0.2em] py-4 mt-3 hover:bg-ink hover:text-offwhite transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
           >
-            Buy Now
+            {isNative ? "Sew Now" : "Buy Now"}
           </button>
         )}
       </div>
