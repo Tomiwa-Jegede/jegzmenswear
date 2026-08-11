@@ -13,11 +13,11 @@ const orderInclude = {
   },
 };
 
-function verifyFlutterwaveTransaction(transactionId) {
+function verifyFlutterwaveTransactionByRef(txRef) {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: "api.flutterwave.com",
-      path: `/v3/transactions/${encodeURIComponent(transactionId)}/verify`,
+      path: `/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`,
       method: "GET",
       headers: {
         Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
@@ -43,14 +43,85 @@ function verifyFlutterwaveTransaction(transactionId) {
   });
 }
 
-async function createOrder(req, res, next) {
+async function resolveOrderItems(req, buyNowItem) {
+  let cart = null;
+  let orderItemsSource;
+
+  if (buyNowItem?.variantId) {
+    const quantity = Number(buyNowItem.quantity) || 1;
+    const variant = await prisma.productVariant.findUnique({
+      where: { id: buyNowItem.variantId },
+      include: { product: { include: { collection: true } } },
+    });
+    if (!variant) {
+      const err = new Error("Product variant not found");
+      err.status = 404;
+      throw err;
+    }
+    if (quantity > variant.stock) {
+      const err = new Error(`Only ${variant.stock} in stock for this size`);
+      err.status = 409;
+      throw err;
+    }
+    if (variant.product.collection?.slug === "native" && !buyNowItem.measurements) {
+      const err = new Error("Measurements are required for this product");
+      err.status = 400;
+      throw err;
+    }
+    orderItemsSource = [
+      { variant, quantity, measurements: buyNowItem.measurements },
+    ];
+  } else {
+    cart = await prisma.cart.findUnique({
+      where: { sessionId: req.sessionId },
+      include: {
+        items: {
+          include: {
+            variant: { include: { product: { include: { collection: true } } } },
+          },
+        },
+      },
+    });
+
+    if (!cart || cart.items.length === 0) {
+      const err = new Error("Cart is empty");
+      err.status = 400;
+      throw err;
+    }
+
+    const missingMeasurements = cart.items.find(
+      (i) =>
+        i.variant.product.collection?.slug === "native" && !i.measurements,
+    );
+    if (missingMeasurements) {
+      const err = new Error(
+        "Measurements are required for one or more items in your cart",
+      );
+      err.status = 400;
+      throw err;
+    }
+
+    orderItemsSource = cart.items.map((i) => ({
+      variant: i.variant,
+      quantity: i.quantity,
+      measurements: i.measurements,
+    }));
+  }
+
+  return { cart, orderItemsSource };
+}
+
+// Called before Flutterwave checkout opens. Locks in delivery details
+// against the tx_ref so the order exists even if the browser never
+// comes back after payment.
+async function createPendingOrder(req, res, next) {
   try {
     const {
       customerName,
       phoneNumber,
       customerEmail,
       deliveryAddress,
-      paymentReference,
+      paymentReference, // this is the client-generated tx_ref
       buyNowItem,
     } = req.body;
     if (
@@ -67,76 +138,6 @@ async function createOrder(req, res, next) {
       throw err;
     }
 
-    let cart = null;
-    let orderItemsSource;
-
-    if (buyNowItem?.variantId) {
-      const quantity = Number(buyNowItem.quantity) || 1;
-      const variant = await prisma.productVariant.findUnique({
-        where: { id: buyNowItem.variantId },
-        include: { product: { include: { collection: true } } },
-      });
-      if (!variant) {
-        const err = new Error("Product variant not found");
-        err.status = 404;
-        throw err;
-      }
-      if (quantity > variant.stock) {
-        const err = new Error(`Only ${variant.stock} in stock for this size`);
-        err.status = 409;
-        throw err;
-      }
-      if (variant.product.collection?.slug === "native" && !buyNowItem.measurements) {
-        const err = new Error("Measurements are required for this product");
-        err.status = 400;
-        throw err;
-      }
-      orderItemsSource = [
-        { variant, quantity, measurements: buyNowItem.measurements },
-      ];
-    } else {
-      cart = await prisma.cart.findUnique({
-        where: { sessionId: req.sessionId },
-        include: {
-          items: {
-            include: {
-              variant: { include: { product: { include: { collection: true } } } },
-            },
-          },
-        },
-      });
-
-      if (!cart || cart.items.length === 0) {
-        const err = new Error("Cart is empty");
-        err.status = 400;
-        throw err;
-      }
-
-      const missingMeasurements = cart.items.find(
-        (i) =>
-          i.variant.product.collection?.slug === "native" && !i.measurements,
-      );
-      if (missingMeasurements) {
-        const err = new Error(
-          "Measurements are required for one or more items in your cart",
-        );
-        err.status = 400;
-        throw err;
-      }
-
-      orderItemsSource = cart.items.map((i) => ({
-        variant: i.variant,
-        quantity: i.quantity,
-        measurements: i.measurements,
-      }));
-    }
-
-    const subtotal = orderItemsSource.reduce(
-      (sum, i) => sum + Number(i.variant.product.price) * i.quantity,
-      0,
-    );
-    const totalAmount = subtotal + DELIVERY_FEE;
-
     const existingOrder = await prisma.order.findUnique({
       where: { paymentReference: String(paymentReference) },
     });
@@ -146,64 +147,144 @@ async function createOrder(req, res, next) {
       throw err;
     }
 
-    const verification = await verifyFlutterwaveTransaction(paymentReference);
-    if (
-      verification.status !== "success" ||
-      verification.data?.status !== "successful"
-    ) {
-      const err = new Error("Payment could not be verified");
-      err.status = 402;
-      throw err;
-    }
+    const { orderItemsSource } = await resolveOrderItems(req, buyNowItem);
 
-    if (verification.data.currency !== "NGN") {
-      const err = new Error("Payment currency does not match order currency");
-      err.status = 402;
-      throw err;
-    }
+    const subtotal = orderItemsSource.reduce(
+      (sum, i) => sum + Number(i.variant.product.price) * i.quantity,
+      0,
+    );
+    const totalAmount = subtotal + DELIVERY_FEE;
 
-    const paidAmountNaira = verification.data.amount;
-    if (paidAmountNaira < totalAmount - 0.5) {
-      const err = new Error("Paid amount does not match order total");
-      err.status = 402;
-      throw err;
-    }
-
-    const order = await prisma.$transaction(async (tx) => {
-      const created = await tx.order.create({
-        data: {
-          customerName,
-          phoneNumber,
-          customerEmail,
-          deliveryAddress,
-          subtotal,
-          deliveryFee: DELIVERY_FEE,
-          totalAmount,
-          paymentReference: String(paymentReference),
-          paymentStatus: "PAID",
-          orderStatus: "PENDING",
-          items: {
-            create: orderItemsSource.map((i) => ({
-              productId: i.variant.product.id,
-              quantity: i.quantity,
-              priceAtPurchase: i.variant.product.price,
-              measurements: i.measurements ?? undefined,
-            })),
-          },
+    const order = await prisma.order.create({
+      data: {
+        customerName,
+        phoneNumber,
+        customerEmail,
+        deliveryAddress,
+        subtotal,
+        deliveryFee: DELIVERY_FEE,
+        totalAmount,
+        paymentReference: String(paymentReference),
+        paymentStatus: "PENDING",
+        orderStatus: "PENDING",
+        items: {
+          create: orderItemsSource.map((i) => ({
+            productId: i.variant.product.id,
+            quantity: i.quantity,
+            priceAtPurchase: i.variant.product.price,
+            measurements: i.measurements ?? undefined,
+          })),
         },
-        include: orderInclude,
-      });
-
-      if (cart) {
-        await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
-      }
-
-      return created;
+      },
+      include: orderInclude,
     });
 
     res.status(201).json(order);
   } catch (err) {
     next(err);
+  }
+}
+
+// Shared by both the frontend confirm route and the webhook.
+async function verifyAndMarkPaid(order) {
+  const verification = await verifyFlutterwaveTransactionByRef(order.paymentReference);
+
+  if (
+    verification.status !== "success" ||
+    verification.data?.status !== "successful"
+  ) {
+    const err = new Error("Payment could not be verified");
+    err.status = 402;
+    throw err;
+  }
+
+  if (verification.data.currency !== "NGN") {
+    const err = new Error("Payment currency does not match order currency");
+    err.status = 402;
+    throw err;
+  }
+
+  const paidAmountNaira = verification.data.amount;
+  if (paidAmountNaira < Number(order.totalAmount) - 0.5) {
+    const err = new Error("Paid amount does not match order total");
+    err.status = 402;
+    throw err;
+  }
+
+  return prisma.order.update({
+    where: { id: order.id },
+    data: { paymentStatus: "PAID" },
+    include: orderInclude,
+  });
+}
+
+// Called by the frontend right after Flutterwave's client-side callback fires.
+async function confirmOrder(req, res, next) {
+  try {
+    const { paymentReference } = req.body;
+    if (!paymentReference) {
+      const err = new Error("paymentReference is required");
+      err.status = 400;
+      throw err;
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { paymentReference: String(paymentReference) },
+    });
+    if (!order) {
+      const err = new Error("Order not found for this payment reference");
+      err.status = 404;
+      throw err;
+    }
+
+    let result = order;
+    if (order.paymentStatus !== "PAID") {
+      result = await verifyAndMarkPaid(order);
+    } else {
+      result = await prisma.order.findUnique({
+        where: { id: order.id },
+        include: orderInclude,
+      });
+    }
+
+    // Clear the session cart now that payment is confirmed (buy-now orders
+    // have no cart, so this is a no-op for them).
+    const cart = await prisma.cart.findUnique({ where: { sessionId: req.sessionId } });
+    if (cart) {
+      await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Server-to-server backup path — fires independently of the customer's browser.
+async function handleFlutterwaveWebhook(req, res) {
+  try {
+    const signature = req.headers["verif-hash"];
+    if (!signature || signature !== process.env.FLW_SECRET_HASH) {
+      return res.status(401).end();
+    }
+
+    const txRef = req.body?.data?.tx_ref;
+    if (!txRef) {
+      return res.status(400).end();
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { paymentReference: String(txRef) },
+    });
+
+    if (order && order.paymentStatus !== "PAID") {
+      await verifyAndMarkPaid(order);
+    }
+
+    res.status(200).end();
+  } catch (err) {
+    console.error("Flutterwave webhook error:", err);
+    res.status(200).end(); // ack so Flutterwave doesn't retry forever; error is logged above
   }
 }
 
@@ -260,7 +341,9 @@ async function updateOrderStatus(req, res, next) {
 }
 
 module.exports = {
-  createOrder,
+  createPendingOrder,
+  confirmOrder,
+  handleFlutterwaveWebhook,
   getAllOrders,
   getOrderById,
   updateOrderStatus,

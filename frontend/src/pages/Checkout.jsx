@@ -114,7 +114,7 @@ function Checkout() {
     );
   }
 
-  function handlePay() {
+  async function handlePay() {
     if (!isFormValid()) {
       setShowErrors(true);
       return;
@@ -132,6 +132,23 @@ function Checkout() {
 
     const txRef = `onfleek-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+    try {
+      await api.post("/orders/pending", {
+        customerName: form.customerName.trim(),
+        phoneNumber: form.phoneNumber.trim(),
+        customerEmail: form.customerEmail.trim(),
+        deliveryAddress: form.deliveryAddress.trim(),
+        paymentReference: txRef,
+        ...(buyNowItem ? { buyNowItem } : {}),
+      });
+    } catch (err) {
+      setSubmitting(false);
+      showToast(
+        err.response?.data?.error || "Could not start checkout. Please try again.",
+      );
+      return;
+    }
+
     window.FlutterwaveCheckout({
       public_key: FLUTTERWAVE_PUBLIC_KEY,
       tx_ref: txRef,
@@ -145,7 +162,7 @@ function Checkout() {
       },
       callback: (data) => {
         if (data.status === "successful" || data.status === "completed") {
-          finalizeOrder(data.transaction_id);
+          finalizeOrder(txRef);
         } else {
           setSubmitting(false);
         }
@@ -158,14 +175,7 @@ function Checkout() {
 
   async function finalizeOrder(paymentReference) {
     try {
-      await api.post("/orders", {
-        customerName: form.customerName.trim(),
-        phoneNumber: form.phoneNumber.trim(),
-        customerEmail: form.customerEmail.trim(),
-        deliveryAddress: form.deliveryAddress.trim(),
-        paymentReference,
-        ...(buyNowItem ? { buyNowItem } : {}),
-      });
+      await api.post("/orders/confirm", { paymentReference });
       if (!buyNowItem) {
         await refreshCart();
       }

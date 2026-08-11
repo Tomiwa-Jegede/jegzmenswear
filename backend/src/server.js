@@ -12,6 +12,7 @@ const heroImagesRouter = require("./routes/heroImages");
 const siteContentRouter = require("./routes/siteContent");
 const musicRouter = require("./routes/music");
 const ordersRouter = require("./routes/orders");
+const flutterwaveRouter = require("./routes/flutterwave");
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use("/api/hero-images", heroImagesRouter);
 app.use("/api/site-content", siteContentRouter);
 app.use("/api/music", musicRouter);
 app.use("/api/orders", ordersRouter);
+app.use("/api/flutterwave", flutterwaveRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);
