@@ -737,17 +737,27 @@ function AdminProducts() {
               )}
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-          >
-            {saving
-              ? "Saving..."
-              : activeProduct
-                ? "Save Product"
-                : "Next: Add Variants →"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={backToList}
+              disabled={saving}
+              className="text-sm uppercase tracking-[0.15em] text-ink/60 hover:text-ink transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {saving
+                ? "Saving..."
+                : activeProduct
+                  ? "Save Product"
+                  : "Next: Add Variants →"}
+            </button>
+          </div>
         </form>
       )}
 
@@ -904,6 +914,13 @@ function AdminProducts() {
             >
               Next: Add Image →
             </button>
+            <button
+              type="button"
+              onClick={backToList}
+              className="ml-auto text-sm uppercase tracking-[0.15em] text-ink/60 hover:text-ink transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -986,7 +1003,8 @@ function AdminProducts() {
             <button
               type="button"
               onClick={() => setCreateStep(2)}
-              className="text-sm uppercase tracking-[0.15em] text-ink/60 hover:text-ink transition-colors cursor-pointer"
+              disabled={saving}
+              className="text-sm uppercase tracking-[0.15em] text-ink/60 hover:text-ink transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ← Back
             </button>
@@ -996,6 +1014,14 @@ function AdminProducts() {
               className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {saving ? "Creating..." : "Create Product"}
+            </button>
+            <button
+              type="button"
+              onClick={backToList}
+              disabled={saving}
+              className="ml-auto text-sm uppercase tracking-[0.15em] text-ink/60 hover:text-ink transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
             </button>
           </div>
         </form>
