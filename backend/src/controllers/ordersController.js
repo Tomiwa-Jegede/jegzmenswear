@@ -7,7 +7,15 @@ const orderInclude = {
   items: {
     include: {
       product: {
-        select: { name: true, slug: true },
+        select: {
+          name: true,
+          slug: true,
+          images: {
+            select: { url: true, altText: true },
+            orderBy: { position: "asc" },
+            take: 1,
+          },
+        },
       },
     },
   },
@@ -120,19 +128,25 @@ async function createPendingOrder(req, res, next) {
       customerName,
       phoneNumber,
       customerEmail,
+      fulfillmentMethod,
       deliveryAddress,
       paymentReference, // this is the client-generated tx_ref
       buyNowItem,
     } = req.body;
+
+    const method = fulfillmentMethod === "PICKUP" ? "PICKUP" : "DELIVERY";
+
     if (
       !customerName ||
       !phoneNumber ||
       !customerEmail ||
-      !deliveryAddress ||
-      !paymentReference
+      !paymentReference ||
+      (method === "DELIVERY" && !deliveryAddress)
     ) {
       const err = new Error(
-        "customerName, phoneNumber, customerEmail, deliveryAddress and paymentReference are required",
+        method === "DELIVERY"
+          ? "customerName, phoneNumber, customerEmail, deliveryAddress and paymentReference are required"
+          : "customerName, phoneNumber, customerEmail and paymentReference are required",
       );
       err.status = 400;
       throw err;
@@ -153,16 +167,18 @@ async function createPendingOrder(req, res, next) {
       (sum, i) => sum + Number(i.variant.product.price) * i.quantity,
       0,
     );
-    const totalAmount = subtotal + DELIVERY_FEE;
+    const deliveryFee = method === "PICKUP" ? 0 : DELIVERY_FEE;
+    const totalAmount = subtotal + deliveryFee;
 
     const order = await prisma.order.create({
       data: {
         customerName,
         phoneNumber,
         customerEmail,
-        deliveryAddress,
+        fulfillmentMethod: method,
+        deliveryAddress: method === "PICKUP" ? null : deliveryAddress,
         subtotal,
-        deliveryFee: DELIVERY_FEE,
+        deliveryFee,
         totalAmount,
         paymentReference: String(paymentReference),
         paymentStatus: "PENDING",
@@ -291,7 +307,10 @@ async function handleFlutterwaveWebhook(req, res) {
 async function getAllOrders(req, res, next) {
   try {
     const { status } = req.query;
-    const where = status ? { orderStatus: status } : {};
+    const where = {
+      paymentStatus: "PAID",
+      ...(status ? { orderStatus: status } : {}),
+    };
     const orders = await prisma.order.findMany({
       where,
       include: orderInclude,

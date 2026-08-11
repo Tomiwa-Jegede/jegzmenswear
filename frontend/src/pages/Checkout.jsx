@@ -91,7 +91,9 @@ function Checkout() {
     });
   }, [loading]);
 
-  const grandTotal = effectiveSubtotal + DELIVERY_FEE;
+  const [fulfillmentMethod, setFulfillmentMethod] = useState("DELIVERY");
+  const effectiveDeliveryFee = fulfillmentMethod === "PICKUP" ? 0 : DELIVERY_FEE;
+  const grandTotal = effectiveSubtotal + effectiveDeliveryFee;
 
   function updateField(field, value) {
     setForm((prev) => {
@@ -110,7 +112,7 @@ function Checkout() {
       form.customerName.trim() &&
       form.phoneNumber.trim() &&
       form.customerEmail.trim() &&
-      form.deliveryAddress.trim()
+      (fulfillmentMethod === "PICKUP" || form.deliveryAddress.trim())
     );
   }
 
@@ -137,7 +139,10 @@ function Checkout() {
         customerName: form.customerName.trim(),
         phoneNumber: form.phoneNumber.trim(),
         customerEmail: form.customerEmail.trim(),
-        deliveryAddress: form.deliveryAddress.trim(),
+        fulfillmentMethod,
+        ...(fulfillmentMethod === "DELIVERY"
+          ? { deliveryAddress: form.deliveryAddress.trim() }
+          : {}),
         paymentReference: txRef,
         ...(buyNowItem ? { buyNowItem } : {}),
       });
@@ -279,20 +284,52 @@ function Checkout() {
           </div>
           <div>
             <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-              Delivery Address <span className="text-red-600">*</span>
+              Fulfillment Method <span className="text-red-600">*</span>
             </label>
-            <textarea
-              value={form.deliveryAddress}
-              onChange={(e) => updateField("deliveryAddress", e.target.value)}
-              className={`w-full border px-4 py-2 text-sm ${
-                showErrors && !form.deliveryAddress.trim()
-                  ? "border-red-600"
-                  : "border-ink/20"
-              }`}
-              rows={3}
-              required
-            />
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setFulfillmentMethod("DELIVERY")}
+                className={`flex-1 border px-4 py-2 text-sm uppercase tracking-[0.15em] ${
+                  fulfillmentMethod === "DELIVERY"
+                    ? "border-ink bg-ink text-offwhite"
+                    : "border-ink/20 text-ink/70"
+                }`}
+              >
+                Delivery
+              </button>
+              <button
+                type="button"
+                onClick={() => setFulfillmentMethod("PICKUP")}
+                className={`flex-1 border px-4 py-2 text-sm uppercase tracking-[0.15em] ${
+                  fulfillmentMethod === "PICKUP"
+                    ? "border-ink bg-ink text-offwhite"
+                    : "border-ink/20 text-ink/70"
+                }`}
+              >
+                Pickup
+              </button>
+            </div>
           </div>
+
+          {fulfillmentMethod === "DELIVERY" && (
+            <div>
+              <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+                Delivery Address <span className="text-red-600">*</span>
+              </label>
+              <textarea
+                value={form.deliveryAddress}
+                onChange={(e) => updateField("deliveryAddress", e.target.value)}
+                className={`w-full border px-4 py-2 text-sm ${
+                  showErrors && !form.deliveryAddress.trim()
+                    ? "border-red-600"
+                    : "border-ink/20"
+                }`}
+                rows={3}
+                required
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -317,7 +354,11 @@ function Checkout() {
           </div>
           <div className="flex justify-between text-sm text-ink/70">
             <span>Delivery Fee</span>
-            <span>₦{DELIVERY_FEE.toLocaleString()}</span>
+            <span>
+              {fulfillmentMethod === "PICKUP"
+                ? "Free"
+                : `₦${DELIVERY_FEE.toLocaleString()}`}
+            </span>
           </div>
           <div className="flex justify-between text-lg font-serif text-ink pt-2 border-t border-ink/10">
             <span>Grand Total</span>

@@ -12,6 +12,7 @@ function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("PENDING");
   const [expandedId, setExpandedId] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   const loadOrders = useCallback(() => {
     setLoading(true);
@@ -94,13 +95,28 @@ function AdminOrders() {
                   <td className="py-3 pr-4 text-ink">{order.customerName}</td>
                   <td className="py-3 pr-4 text-ink/70">{order.phoneNumber}</td>
                   <td className="py-3 pr-4 text-ink/70 max-w-[180px]">
-                    {order.deliveryAddress}
+                    {order.fulfillmentMethod === "PICKUP" ? (
+                      <span className="text-xs uppercase tracking-[0.1em] text-ink/50">
+                        Pickup
+                      </span>
+                    ) : (
+                      order.deliveryAddress
+                    )}
                   </td>
                   <td className="py-3 pr-4 text-ink/70">
                     {expandedId === order.id ? (
                       <ul className="space-y-3">
                         {order.items.map((item) => (
-                          <li key={item.id}>
+                          <li key={item.id} className="flex gap-3 items-start">
+                            {item.product?.images?.[0]?.url && (
+                              <img
+                                src={item.product.images[0].url}
+                                alt={item.product.images[0].altText || item.product.name}
+                                onClick={() => setLightboxImage(item.product.images[0])}
+                                className="w-12 h-12 object-cover border border-ink/10 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+                              />
+                            )}
+                            <div>
                             <p>
                               {item.product?.name || "Deleted product"} × {item.quantity}
                             </p>
@@ -126,6 +142,7 @@ function AdminOrders() {
                                 </p>
                               </div>
                             )}
+                            </div>
                           </li>
                         ))}
                       </ul>
@@ -196,6 +213,18 @@ function AdminOrders() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    {lightboxImage && (
+        <div
+          onClick={() => setLightboxImage(null)}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6 cursor-pointer"
+        >
+          <img
+            src={lightboxImage.url}
+            alt={lightboxImage.altText || "Product image"}
+            className="max-w-full max-h-full object-contain"
+          />
         </div>
       )}
     </div>

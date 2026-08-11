@@ -175,6 +175,11 @@ enum PaymentStatus {
   FAILED
 }
 
+enum FulfillmentMethod {
+  DELIVERY
+  PICKUP
+}
+
 enum OrderStatus {
   PENDING
   PROCESSING
@@ -183,13 +188,14 @@ enum OrderStatus {
 }
 
 model Order {
-  id               String        @id @default(cuid())
-  customerName     String
-  phoneNumber      String
-  customerEmail    String
-  deliveryAddress  String
-  subtotal         Decimal       @db.Decimal(10, 2)
-  deliveryFee      Decimal       @db.Decimal(10, 2)
+  id                String            @id @default(cuid())
+  customerName      String
+  phoneNumber       String
+  customerEmail     String
+  fulfillmentMethod FulfillmentMethod @default(DELIVERY)
+  deliveryAddress   String?
+  subtotal          Decimal           @db.Decimal(10, 2)
+  deliveryFee       Decimal           @db.Decimal(10, 2)
   totalAmount      Decimal       @db.Decimal(10, 2)
   paymentReference String        @unique
   paymentStatus    PaymentStatus @default(PENDING)
