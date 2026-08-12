@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/generate-sitemap.cjs",
+    "build": "vite build && node scripts/generate-sitemap.cjs && node scripts/preload-hero.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "wrangler deploy"
