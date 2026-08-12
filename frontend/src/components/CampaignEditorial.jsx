@@ -2,7 +2,7 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import { useEffect, useState, useRef } from "react";
 import api from "../lib/axios";
 import FadeImage from "./FadeImage";
-
+import { optimizedImageUrl } from "../lib/cloudinary";
 const placeholders = [
   {
     id: "01",
@@ -73,13 +73,13 @@ function EditorialPlaceholder({
       {image ? (
         <>
           <FadeImage
-            src={image.url}
+            src={optimizedImageUrl(image.url, 400)}
             alt={image.altText || label}
             className="absolute inset-0 h-full w-full object-cover sm:hidden"
             style={mobileStyle}
           />
           <FadeImage
-            src={image.url}
+            src={optimizedImageUrl(image.url, 700)}
             alt={image.altText || label}
             className="absolute inset-0 h-full w-full object-cover hidden sm:block"
             style={desktopStyle}

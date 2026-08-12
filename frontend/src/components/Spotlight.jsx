@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import api from "../lib/axios";
 import FadeImage from "./FadeImage";
+import { optimizedImageUrl } from "../lib/cloudinary";
 
 const DEFAULTS = {
   spotlight_collection_slug: "",
@@ -115,7 +116,7 @@ function RugbyPoloSpotlight() {
         >
           {(content.spotlight_image_url || collection.heroImageUrl) && (
             <img
-              src={content.spotlight_image_url || collection.heroImageUrl}
+              src={optimizedImageUrl(content.spotlight_image_url || collection.heroImageUrl, 900)}
               alt={collection.name}
               className="absolute inset-0 h-full w-full object-cover"
             />

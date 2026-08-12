@@ -10,6 +10,7 @@ import {
 import api from "../lib/axios";
 import { IconArrowLeft } from "./icons";
 import FadeImage from "./FadeImage";
+import { optimizedImageUrl } from "../lib/cloudinary";
 
 const ROTATE_INTERVAL = 2000; // ms between campaign images — not scroll-linked
 
@@ -155,7 +156,7 @@ useEffect(() => {
             className="absolute inset-0 h-full w-full overflow-hidden"
           >
             <FadeImage
-              src={currentImage.url}
+              src={optimizedImageUrl(currentImage.url, 1600)}
               alt={currentImage.alt || "Jegzmenswear campaign portrait"}
               loading="eager"
               decoding="async"
@@ -181,7 +182,7 @@ useEffect(() => {
         className="absolute inset-0 h-full w-full overflow-hidden"
       >
         <FadeImage
-          src={currentImage.url}
+          src={optimizedImageUrl(currentImage.url, 800)}
           alt={currentImage.alt || "Jegzmenswear campaign portrait"}
           loading="eager"
           decoding="async"

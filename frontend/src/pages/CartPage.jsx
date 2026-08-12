@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import Skeleton from "../components/ui/Skeleton";
 import MeasurementModal from "../components/MeasurementModal";
+import { optimizedImageUrl } from "../lib/cloudinary";
 
 function CartPage() {
   const { cart, loading, updateQuantity, removeItem, updateMeasurements, subtotal } =
@@ -67,7 +68,7 @@ function CartPage() {
             <div className="w-24 h-32 bg-cream flex-shrink-0 overflow-hidden">
               {item.variant.product.images[0] && (
                 <img
-                  src={item.variant.product.images[0].url}
+                  src={optimizedImageUrl(item.variant.product.images[0].url, 150)}
                   alt={item.variant.product.images[0].altText || ""}
                   className="w-full h-full object-cover"
                 />

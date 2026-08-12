@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import api from "../lib/axios";
 import Skeleton from "../components/ui/Skeleton";
 import FadeImage from "../components/FadeImage";
+import { optimizedImageUrl } from "../lib/cloudinary";
 
 function getFocalPoint(val) {
   return val && val !== "auto" && val !== "manual" ? val : "center center";
@@ -85,7 +86,7 @@ function CollectionPage() {
                 {p.images[0] && (
                   <>
                     <FadeImage
-                      src={p.images[0].url}
+                      src={optimizedImageUrl(p.images[0].url, 400)}
                       alt={p.images[0].altText || p.name}
                       className="absolute inset-0 h-full w-full sm:hidden group-hover:scale-105 transition-transform duration-500"
                       style={{
@@ -95,7 +96,7 @@ function CollectionPage() {
                       }}
                     />
                     <FadeImage
-                      src={p.images[0].url}
+                      src={optimizedImageUrl(p.images[0].url, 500)}
                       alt={p.images[0].altText || p.name}
                       className="absolute inset-0 h-full w-full object-cover hidden sm:block group-hover:scale-105 transition-transform duration-500"
                       style={{

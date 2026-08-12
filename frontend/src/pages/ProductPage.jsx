@@ -5,6 +5,7 @@ import api from "../lib/axios";
 import { useCart } from "../context/CartContext";
 import Skeleton from "../components/ui/Skeleton";
 import FadeImage from "../components/FadeImage";
+import { optimizedImageUrl } from "../lib/cloudinary";
 import MeasurementModal from "../components/MeasurementModal";
 import { loadSavedMeasurements } from "../components/MeasurementForm";
 
@@ -205,7 +206,7 @@ function ProductPage() {
           {product.images[activeImageIndex] && (
             <>
               <FadeImage
-                src={product.images[activeImageIndex].url}
+                src={optimizedImageUrl(product.images[activeImageIndex].url, 800)}
                 alt={product.images[activeImageIndex].altText || product.name}
                 className="absolute inset-0 h-full w-full object-cover sm:hidden"
                 style={{
@@ -213,7 +214,7 @@ function ProductPage() {
                 }}
               />
               <FadeImage
-                src={product.images[activeImageIndex].url}
+                src={optimizedImageUrl(product.images[activeImageIndex].url, 1000)}
                 alt={product.images[activeImageIndex].altText || product.name}
                 className="absolute inset-0 h-full w-full object-cover hidden sm:block"
                 style={{
@@ -234,7 +235,7 @@ function ProductPage() {
                 }`}
               >
                 <img
-                  src={img.url}
+                  src={optimizedImageUrl(img.url, 100)}
                   alt={img.altText || ""}
                   className="w-full h-full object-cover"
                   style={{ objectPosition: getFocalPoint(img.desktopCropMode) }}

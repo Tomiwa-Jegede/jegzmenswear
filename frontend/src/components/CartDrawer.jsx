@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import Skeleton from "./ui/Skeleton";
+import { optimizedImageUrl } from "../lib/cloudinary";
 
 
 function getFocalPoint(val) {
@@ -62,7 +63,7 @@ function CartDrawer() {
                   {item.variant.product.images[0] && (
                     <>
                       <img
-                        src={item.variant.product.images[0].url}
+                        src={optimizedImageUrl(item.variant.product.images[0].url, 150)}
                         alt={item.variant.product.images[0].altText || ""}
                         className="absolute inset-0 h-full w-full sm:hidden"
                         style={{
@@ -72,7 +73,7 @@ function CartDrawer() {
                         }}
                       />
                       <img
-                        src={item.variant.product.images[0].url}
+                        src={optimizedImageUrl(item.variant.product.images[0].url, 150)}
                         alt={item.variant.product.images[0].altText || ""}
                         className="absolute inset-0 h-full w-full hidden sm:block"
                         style={{

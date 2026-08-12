@@ -1,5 +1,15 @@
 import api from "./axios";
 
+// Injects Cloudinary delivery transforms (auto format, auto quality, capped width)
+// into an existing secure_url without needing to change how URLs are stored.
+export function optimizedImageUrl(url, width) {
+  if (!url || !url.includes("/upload/")) return url;
+  const transforms = width
+    ? `f_auto,q_auto,w_${width}`
+    : "f_auto,q_auto";
+  return url.replace("/upload/", `/upload/${transforms}/`);
+}
+
 export async function uploadImageToCloudinary(file) {
   const { data } = await api.get("/admin/cloudinary-signature");
 
