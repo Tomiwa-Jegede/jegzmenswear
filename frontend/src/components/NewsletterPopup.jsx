@@ -66,7 +66,7 @@ function NewsletterPopup() {
       onClick={dismiss}
     >
       <div
-        className="relative w-full max-w-md bg-offwhite p-10 text-center"
+        className="relative w-full max-w-md bg-offwhite p-6 sm:p-10 text-center"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -101,19 +101,19 @@ function NewsletterPopup() {
               Sign up for new drops, restocks, and exclusive access.
             </p>
             {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-            <form onSubmit={handleSubmit} className="flex items-center border border-ink/20 rounded-full overflow-hidden">
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 sm:border sm:border-ink/20 sm:rounded-full sm:overflow-hidden">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Your email address"
                 required
-                className="flex-1 px-6 py-4 text-sm bg-transparent focus:outline-none text-ink placeholder-ink/40"
+                className="w-full border border-ink/20 rounded-full sm:border-0 sm:rounded-none flex-1 px-6 py-4 text-sm bg-transparent focus:outline-none text-ink placeholder-ink/40"
               />
               <button
                 type="submit"
                 disabled={status === "submitting"}
-                className="rounded-full m-1 px-5 py-3 text-xs uppercase tracking-[0.15em] bg-ink text-offwhite disabled:opacity-50 cursor-pointer"
+                className="w-full sm:w-auto rounded-full sm:m-1 px-5 py-3 text-xs uppercase tracking-[0.15em] bg-ink text-offwhite disabled:opacity-50 cursor-pointer"
               >
                 {status === "submitting" ? "..." : "Join"}
               </button>
