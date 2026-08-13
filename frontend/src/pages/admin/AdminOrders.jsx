@@ -117,9 +117,7 @@ function AdminOrders() {
                               />
                             )}
                             <div>
-                            <p>
-                              {item.product?.name || "Deleted product"} × {item.quantity}
-                            </p>
+                            <p>× {item.quantity}</p>
                             {item.measurements && (
                               <div className="mt-1 pl-3 border-l-2 border-ink/10 text-xs text-ink/60 space-y-0.5">
                                 <p className="uppercase tracking-[0.1em] text-ink/40 mb-1">

@@ -44,7 +44,7 @@ function BreadcrumbTabs() {
   if (trail.length <= 1) return null; // only home, nothing to show
 
   return (
-    <div className="flex items-center gap-2 flex-wrap px-6 py-3 border-b border-ink/10 bg-white mt-5 sm:mt-5">
+    <div className="flex items-center gap-2 flex-wrap px-6 py-3 border-b border-ink/10 bg-white mt-5 sm:mt-10">
       {trail.map((item, i) => {
         const isActive = i === trail.length - 1;
         return (

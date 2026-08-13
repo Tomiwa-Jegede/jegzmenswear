@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import api from "../lib/axios";
 import Skeleton from "../components/ui/Skeleton";
@@ -10,7 +10,35 @@ function getFocalPoint(val) {
   return val && val !== "auto" && val !== "manual" ? val : "center center";
 }
 
+function getPageNumbers(current, total) {
+  const delta = 2;
+  const range = [];
+  const rangeWithDots = [];
+  let last;
+
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+      range.push(i);
+    }
+  }
+
+  for (const n of range) {
+    if (last) {
+      if (n - last === 2) {
+        rangeWithDots.push(last + 1);
+      } else if (n - last > 2) {
+        rangeWithDots.push("...");
+      }
+    }
+    rangeWithDots.push(n);
+    last = n;
+  }
+
+  return rangeWithDots;
+}
+
 function Shop() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [search, setSearch] = useState("");
@@ -18,19 +46,42 @@ function Shop() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => {
+    const p = parseInt(searchParams.get("page"), 10);
+    return p > 0 ? p : 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
-
+  const [newArrivals, setNewArrivals] = useState([]);
   useEffect(() => {
     api
       .get("/collections")
       .then((res) => setCollections(res.data))
       .catch(console.error);
+    api
+      .get("/products", { params: { page: 1, limit: 8 } })
+      .then((res) => setNewArrivals(res.data.products))
+      .catch(console.error);
   }, []);
 
-useEffect(() => {
+const isFirstFilterRun = useRef(true);
+  useEffect(() => {
+    if (isFirstFilterRun.current) {
+      isFirstFilterRun.current = false;
+      return;
+    }
     setPage(1);
   }, [search, collectionSlug, minPrice, maxPrice]);
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (page > 1) {
+        next.set("page", String(page));
+      } else {
+        next.delete("page");
+      }
+      return next;
+    }, { replace: true });
+  }, [page]);
   useEffect(() => {
     const timeout = setTimeout(() => {
       setLoading(true);
@@ -191,6 +242,49 @@ useEffect(() => {
         ))}
       </ul>
 
+      {!search && !collectionSlug && !minPrice && !maxPrice && newArrivals.length > 0 && (
+        <div className="mb-10">
+          <h2 className="font-serif text-xl text-ink mb-4">New Arrivals</h2>
+          <ul className="flex gap-4 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+            {newArrivals.map((p) => (
+              <li key={p.id} className="flex-shrink-0 w-36 sm:w-44">
+                <Link to={`/products/${p.slug}`} className="group block">
+                  <div className="bg-cream aspect-[3/4] overflow-hidden mb-2 relative rounded-lg">
+                    <span className="absolute top-2 left-2 z-10 bg-offwhite text-ink text-[9px] sm:text-[10px] uppercase tracking-[0.15em] px-2 py-1 rounded-full border border-ink/10">
+                      New 
+                    </span>
+                    {p.isFullyOutOfStock && (
+                      <span className="absolute top-2 right-2 z-10 bg-ink text-offwhite text-[9px] sm:text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded-full">
+                        Sold Out
+                      </span>
+                    )}
+                    {p.images[0] && (
+                      <FadeImage
+                        src={optimizedImageUrl(p.images[0].url, 300)}
+                        alt={p.images[0].altText || p.name}
+                        className={`absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                          p.isFullyOutOfStock ? "grayscale opacity-60" : ""
+                        }`}
+                        style={{ objectPosition: getFocalPoint(p.images[0].desktopCropMode) }}
+                      />
+                    )}
+                    {p.isFullyOutOfStock && (
+                      <div className="absolute inset-0 bg-white/20 pointer-events-none" />
+                    )}
+                  </div>
+                  <h3 className="font-serif text-xs sm:text-sm text-ink truncate">
+                    {p.name}
+                  </h3>
+                  <p className="text-ink/50 text-xs sm:text-sm">
+                    ₦{Number(p.price).toLocaleString()}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {!loading && products.length === 0 && (
         <p className="text-ink/60">No products found.</p>
       )}
@@ -218,16 +312,23 @@ useEffect(() => {
                         <FadeImage
                           src={optimizedImageUrl(p.images[0].url, 400)}
                           alt={p.images[0].altText || p.name}
-                          className="absolute inset-0 h-full w-full object-cover sm:hidden group-hover:scale-105 transition-transform duration-500"
+                          className={`absolute inset-0 h-full w-full object-cover sm:hidden group-hover:scale-105 transition-transform duration-500 ${
+                            p.isFullyOutOfStock ? "grayscale opacity-60" : ""
+                          }`}
                          style={{ objectPosition: getFocalPoint(p.images[0].mobileCropMode) }}
                         />
                         <FadeImage
                           src={optimizedImageUrl(p.images[0].url, 500)}
                           alt={p.images[0].altText || p.name}
-                          className="absolute inset-0 h-full w-full object-cover hidden sm:block group-hover:scale-105 transition-transform duration-500"
+                          className={`absolute inset-0 h-full w-full object-cover hidden sm:block group-hover:scale-105 transition-transform duration-500 ${
+                            p.isFullyOutOfStock ? "grayscale opacity-60" : ""
+                          }`}
                          style={{ objectPosition: getFocalPoint(p.images[0].desktopCropMode) }}
                         />
                       </>
+                    )}
+                    {p.isFullyOutOfStock && (
+                      <div className="absolute inset-0 bg-white/20 pointer-events-none" />
                     )}
                   </div>
                   <h3 className="font-serif text-sm sm:text-lg text-ink mb-1 truncate">
@@ -241,34 +342,51 @@ useEffect(() => {
             ))}
       </ul>
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-10">
+        <div className="flex items-center justify-center gap-2 sm:gap-2 mt-10">
           <button
             type="button"
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
-            className="px-3 py-2 text-xs uppercase tracking-[0.15em] border border-ink/20 text-ink/60 hover:border-ink hover:text-ink transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            className="px-3 py-2 text-xs uppercase tracking-[0.15em] border border-ink/20 text-ink/60 hover:border-ink hover:text-ink transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
           >
             Prev
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setPage(n)}
-              className={`w-9 h-9 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                page === n
-                  ? "bg-ink text-offwhite border-ink"
-                  : "border-ink/20 text-ink/60 hover:border-ink hover:text-ink"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
+
+          <span className="sm:hidden text-xs uppercase tracking-[0.15em] text-ink/60 px-2">
+            Page {page} of {totalPages}
+          </span>
+
+          <div className="hidden sm:flex items-center gap-2">
+            {getPageNumbers(page, totalPages).map((n, i) =>
+              n === "..." ? (
+                <span
+                  key={`dots-${i}`}
+                  className="w-9 h-9 flex items-center justify-center text-xs text-ink/40"
+                >
+                  …
+                </span>
+              ) : (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPage(n)}
+                  className={`w-9 h-9 text-xs uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
+                    page === n
+                      ? "bg-ink text-offwhite border-ink"
+                      : "border-ink/20 text-ink/60 hover:border-ink hover:text-ink"
+                  }`}
+                >
+                  {n}
+                </button>
+              )
+            )}
+          </div>
+
           <button
             type="button"
             disabled={page === totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="px-3 py-2 text-xs uppercase tracking-[0.15em] border border-ink/20 text-ink/60 hover:border-ink hover:text-ink transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            className="px-3 py-2 text-xs uppercase tracking-[0.15em] border border-ink/20 text-ink/60 hover:border-ink hover:text-ink transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
           >
             Next
           </button>

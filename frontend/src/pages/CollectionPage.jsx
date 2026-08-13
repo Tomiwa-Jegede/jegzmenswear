@@ -83,12 +83,19 @@ function CollectionPage() {
           <li key={p.id}>
             <Link to={`/products/${p.slug}`} className="group block">
               <div className="bg-cream aspect-[3/4] overflow-hidden mb-3 relative">
+                {p.isFullyOutOfStock && (
+                  <span className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 bg-ink text-offwhite text-[10px] sm:text-xs uppercase tracking-[0.1em] sm:tracking-[0.15em] px-2 py-1 sm:px-3 sm:py-1.5 rounded-full">
+                    Sold Out
+                  </span>
+                )}
                 {p.images[0] && (
                   <>
                     <FadeImage
                       src={optimizedImageUrl(p.images[0].url, 400)}
                       alt={p.images[0].altText || p.name}
-                      className="absolute inset-0 h-full w-full sm:hidden group-hover:scale-105 transition-transform duration-500"
+                      className={`absolute inset-0 h-full w-full sm:hidden group-hover:scale-105 transition-transform duration-500 ${
+                        p.isFullyOutOfStock ? "grayscale opacity-60" : ""
+                      }`}
                       style={{
                         objectPosition: getFocalPoint(
                           p.images[0].mobileCropMode,
@@ -98,7 +105,9 @@ function CollectionPage() {
                     <FadeImage
                       src={optimizedImageUrl(p.images[0].url, 500)}
                       alt={p.images[0].altText || p.name}
-                      className="absolute inset-0 h-full w-full object-cover hidden sm:block group-hover:scale-105 transition-transform duration-500"
+                      className={`absolute inset-0 h-full w-full object-cover hidden sm:block group-hover:scale-105 transition-transform duration-500 ${
+                        p.isFullyOutOfStock ? "grayscale opacity-60" : ""
+                      }`}
                       style={{
                         objectPosition: getFocalPoint(
                           p.images[0].desktopCropMode,
@@ -106,6 +115,9 @@ function CollectionPage() {
                       }}
                     />
                   </>
+                )}
+                {p.isFullyOutOfStock && (
+                  <div className="absolute inset-0 bg-white/20 pointer-events-none" />
                 )}
               </div>
               <p className="text-ink text-sm">{p.name}</p>

@@ -5,6 +5,13 @@ import api from "../../lib/axios";
 import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import Skeleton from "../../components/ui/Skeleton";
 
+const DEFAULT_SIZE_CHART = [
+  { size: "M", chest: "39-41", waist: "33-35", length: "28-29" },
+  { size: "L", chest: "42-44", waist: "36-38", length: "29-30" },
+  { size: "XL", chest: "45-47", waist: "39-41", length: "30-31" },
+  { size: "XXL", chest: "48-50", waist: "42-44", length: "31-32" },
+];
+
 const DEFAULTS = {
   spotlight_collection_slug: "",
   spotlight_label: "Spotlight",
@@ -13,6 +20,7 @@ const DEFAULTS = {
     "Inspired by the confidence of campus icons and reimagined for a generation building its future in real time.",
   spotlight_cta: "View Full Collection",
   spotlight_image_url: "",
+  size_chart: JSON.stringify(DEFAULT_SIZE_CHART),
 };
 
 function AdminSiteContent() {
@@ -38,6 +46,20 @@ function AdminSiteContent() {
 
   function set(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function getSizeChart() {
+    try {
+      return JSON.parse(form.size_chart);
+    } catch {
+      return DEFAULT_SIZE_CHART;
+    }
+  }
+
+  function updateSizeChartCell(rowIndex, field, value) {
+    const chart = getSizeChart();
+    chart[rowIndex] = { ...chart[rowIndex], [field]: value };
+    set("size_chart", JSON.stringify(chart));
   }
 
   async function handleSubmit(e) {
@@ -188,6 +210,57 @@ function AdminSiteContent() {
                 setSpotlightPreview(f ? URL.createObjectURL(f) : null);
               }}
             />
+          </div>
+        </section>
+
+        {/* Size Chart */}
+        <section className="border border-ink/10 p-6 space-y-4">
+          <h2 className="font-serif text-xl text-ink">Size Chart</h2>
+          <p className="text-xs text-ink/50">
+            Universal measurements shown to customers on product pages (in inches).
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-[0.15em] text-ink/50 border-b border-ink/10">
+                  <th className="py-2 pr-4">Size</th>
+                  <th className="py-2 pr-4">Chest</th>
+                  <th className="py-2 pr-4">Waist</th>
+                  <th className="py-2 pr-4">Length</th>
+                </tr>
+              </thead>
+              <tbody>
+                {getSizeChart().map((row, i) => (
+                  <tr key={row.size} className="border-b border-ink/10">
+                    <td className="py-2 pr-4 text-ink font-medium">{row.size}</td>
+                    <td className="py-2 pr-4">
+                      <input
+                        type="text"
+                        value={row.chest}
+                        onChange={(e) => updateSizeChartCell(i, "chest", e.target.value)}
+                        className="w-24 border border-ink/20 px-2 py-1 text-sm"
+                      />
+                    </td>
+                    <td className="py-2 pr-4">
+                      <input
+                        type="text"
+                        value={row.waist}
+                        onChange={(e) => updateSizeChartCell(i, "waist", e.target.value)}
+                        className="w-24 border border-ink/20 px-2 py-1 text-sm"
+                      />
+                    </td>
+                    <td className="py-2 pr-4">
+                      <input
+                        type="text"
+                        value={row.length}
+                        onChange={(e) => updateSizeChartCell(i, "length", e.target.value)}
+                        className="w-24 border border-ink/20 px-2 py-1 text-sm"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 

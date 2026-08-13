@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import RouteErrorBoundary from "./components/RouteErrorBoundary";
 
 const Home = lazy(() => import("./pages/Home"));
 const CollectionPage = lazy(() => import("./pages/CollectionPage"));
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <Home /> },
       { path: "collections/:slug", element: <CollectionPage /> },

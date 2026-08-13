@@ -8,6 +8,7 @@ import FadeImage from "../components/FadeImage";
 import { optimizedImageUrl } from "../lib/cloudinary";
 import MeasurementModal from "../components/MeasurementModal";
 import { loadSavedMeasurements } from "../components/MeasurementForm";
+import SizeGuideModal from "../components/SizeGuideModal";
 
 function getFocalPoint(val) {
   return val && val !== "auto" && val !== "manual" ? val : "center center";
@@ -23,6 +24,7 @@ function ProductPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
 
   useEffect(() => {
     api
@@ -200,7 +202,27 @@ function ProductPage() {
           })}
         </script>
       </Helmet>
-    <div className="px-6 py-12 grid gap-10 md:grid-cols-2 max-w-5xl mx-auto">
+    <div className="px-6 pt-6 pb-12 max-w-5xl mx-auto">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-ink/60 hover:text-ink transition-colors cursor-pointer mb-6"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M9 2L3 7l6 5" />
+        </svg>
+        Back
+      </button>
+      <div className="grid gap-10 md:grid-cols-2">
       <div>
         <div className="bg-cream aspect-[3/4] overflow-hidden relative">
           {product.images[activeImageIndex] && (
@@ -257,9 +279,18 @@ function ProductPage() {
         <p className="font-sans text-ink/70 mb-8 whitespace-pre-line">{product.description}</p>
 
         <div className="mb-8">
-          <p className="font-sans text-xs uppercase tracking-[0.2em] text-ink/50 mb-3">
-            Size
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="font-sans text-xs uppercase tracking-[0.2em] text-ink/50">
+              Size
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowSizeGuide(true)}
+              className="text-xs uppercase tracking-[0.15em] text-ink/50 hover:text-ink underline cursor-pointer"
+            >
+              Size Guide
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {product.variants.map((v) => (
               <button
@@ -304,6 +335,7 @@ function ProductPage() {
         )}
       </div>
     </div>
+    </div>
     <MeasurementModal
       open={showMeasurementModal}
       onClose={() => {
@@ -314,6 +346,9 @@ function ProductPage() {
       initialValues={loadSavedMeasurements()}
       submitLabel={pendingAction === "buynow" ? "Continue to Checkout" : "Add to Cart"}
     />
+    {showSizeGuide && (
+      <SizeGuideModal onClose={() => setShowSizeGuide(false)} />
+    )}
     </>
   );
 }

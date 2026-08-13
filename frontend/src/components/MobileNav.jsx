@@ -1,6 +1,6 @@
-import { AnimatePresence, motion } from "framer-motion";
+
 import { Link, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   IconHome,
   IconTag,
@@ -20,31 +20,37 @@ function MobileNav({
   onLogout,
 }) {
   const location = useLocation();
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+    } else {
+      const timeout = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
+  if (!shouldRender) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            onClick={onClose}
-            className="fixed inset-0 bg-ink/40 z-40 sm:hidden"
-          />
-          <motion.div
-            initial={{ opacity: 0, x: "-100%" }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: "-100%" }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed top-20 left-0 w-[65%] max-w-xs bg-offwhite border border-ink/10 rounded-2xl shadow-xl z-50 sm:hidden flex flex-col px-6 py-6"
-          >
+    <>
+      <div
+        onClick={onClose}
+        className={`fixed inset-0 bg-ink/40 z-40 sm:hidden transition-opacity duration-250 ease-out ${
+          isOpen ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      <div
+        className={`fixed top-20 left-0 w-[65%] max-w-xs bg-offwhite border border-ink/10 rounded-2xl shadow-xl z-50 sm:hidden flex flex-col px-6 py-6 transition-all duration-300 ease-out ${
+          isOpen ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-full"
+        }`}
+      >
             <div className="mb-6">
               <span className="font-serif text-xl text-ink">Menu</span>
             </div>
@@ -89,10 +95,8 @@ function MobileNav({
                 </button>
               )}
             </nav>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </div>
+    </>
   );
 }
 

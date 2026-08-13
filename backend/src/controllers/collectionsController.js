@@ -33,6 +33,7 @@ async function getCollectionBySlug(req, res, next) {
           where: { isActive: true },
           include: {
             images: { orderBy: { position: "asc" }, take: 1 },
+            variants: { select: { stock: true } },
           },
         },
       },
@@ -42,7 +43,13 @@ async function getCollectionBySlug(req, res, next) {
       err.status = 404;
       throw err;
     }
-    res.json(collection);
+
+    const products = collection.products.map(({ variants, ...p }) => ({
+      ...p,
+      isFullyOutOfStock: variants.every((v) => v.stock < 1),
+    }));
+
+    res.json({ ...collection, products });
   } catch (err) {
     next(err);
   }
