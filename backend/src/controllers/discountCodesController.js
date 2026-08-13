@@ -17,7 +17,7 @@ async function validateCode(req, res, next) {
       return res.status(404).json({ valid: false, error: "Invalid or already used code" });
     }
 
-    res.json({ valid: true, amount: discountCode.amount });
+    res.json({ valid: true, percentage: discountCode.percentage });
   } catch (err) {
     next(err);
   }

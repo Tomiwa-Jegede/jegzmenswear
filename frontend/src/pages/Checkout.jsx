@@ -101,9 +101,8 @@ function Checkout() {
     fulfillmentMethod === "PICKUP" || effectiveSubtotal >= FREE_DELIVERY_THRESHOLD
       ? 0
       : DELIVERY_FEE;
-  const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
   const discountAmount = appliedDiscount
-    ? Math.min(appliedDiscount.amount * totalQuantity, effectiveSubtotal + effectiveDeliveryFee)
+    ? effectiveSubtotal * (appliedDiscount.percentage / 100)
     : 0;
   const grandTotal = effectiveSubtotal + effectiveDeliveryFee - discountAmount;
 
@@ -126,7 +125,7 @@ function Checkout() {
     setDiscountError("");
     try {
       const res = await api.get(`/discount-codes/${encodeURIComponent(code)}`);
-      setAppliedDiscount({ code, amount: Number(res.data.amount) });
+      setAppliedDiscount({ code, percentage: Number(res.data.percentage) });
     } catch (err) {
       setAppliedDiscount(null);
       setDiscountError(err.response?.data?.error || "Invalid or already used code");
@@ -380,7 +379,7 @@ function Checkout() {
           {appliedDiscount ? (
             <div className="flex items-center justify-between border border-ink/20 px-4 py-2 text-sm">
               <span className="text-ink">
-                {appliedDiscount.code} applied — ₦{appliedDiscount.amount.toLocaleString()} off
+                {appliedDiscount.code} applied — {appliedDiscount.percentage}% off (₦{discountAmount.toLocaleString()})
               </span>
               <button
                 type="button"

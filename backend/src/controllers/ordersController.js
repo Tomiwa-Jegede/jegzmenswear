@@ -183,8 +183,7 @@ async function createPendingOrder(req, res, next) {
         err.status = 400;
         throw err;
       }
-      const totalQuantity = orderItemsSource.reduce((sum, i) => sum + i.quantity, 0);
-      discountAmount = Math.min(Number(dc.amount) * totalQuantity, subtotal + deliveryFee);
+      discountAmount = subtotal * (Number(dc.percentage) / 100);
       appliedDiscountCode = dc.code;
     }
 
