@@ -1,14 +1,28 @@
 import { useState } from "react";
-
+import api from "../lib/axios";
 function EmailCapture() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
-
-  function handleSubmit(e) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!email) return;
-    // TODO: wire to backend
-    setSubmitted(true);
+    if (!email || submitting) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      await api.post("/subscribers", { email });
+      setSubmitted(true);
+    } catch (err) {
+      const message =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      setError(message);
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -24,10 +38,14 @@ function EmailCapture() {
           New drops, restocks, and exclusive access — straight to your inbox.
         </p>
         {submitted ? (
-          <p className="text-sm uppercase tracking-[0.2em] text-ink/60">
-            You're on the list ✓
+          <p className="text-sm uppercase tracking-[0.2em] text-green-600">
+            Check your email to confirm ✓
           </p>
         ) : (
+          <>
+          {error && (
+            <p className="text-sm text-red-600 mb-4">{error}</p>
+          )}
           <form onSubmit={handleSubmit} className="flex items-center border border-ink/20 rounded-full overflow-hidden">
             <input
               type="email"
@@ -39,7 +57,8 @@ function EmailCapture() {
             />
             <button
               type="submit"
-              className="rounded-full m-1 p-3 cursor-pointer flex items-center justify-center transition-all hover:scale-105"
+              disabled={submitting}
+              className="rounded-full m-1 p-3 cursor-pointer flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: "rgba(255,255,255,0.15)",
                 backdropFilter: "blur(10px)",
@@ -53,6 +72,7 @@ function EmailCapture() {
               </svg>
             </button>
           </form>
+          </>
         )}
       </div>
     </div>

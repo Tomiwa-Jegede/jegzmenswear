@@ -13,6 +13,9 @@ const siteContentRouter = require("./routes/siteContent");
 const musicRouter = require("./routes/music");
 const ordersRouter = require("./routes/orders");
 const flutterwaveRouter = require("./routes/flutterwave");
+const subscribersRouter = require("./routes/subscribers");
+const discountCodesRouter = require("./routes/discountCodes");
+const campaignsRouter = require("./routes/campaigns");
 
 const app = express();
 
@@ -69,6 +72,9 @@ app.use("/api/site-content", siteContentRouter);
 app.use("/api/music", musicRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/flutterwave", flutterwaveRouter);
+app.use("/api/subscribers", subscribersRouter);
+app.use("/api/discount-codes", discountCodesRouter);
+app.use("/api/campaigns", campaignsRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

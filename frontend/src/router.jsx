@@ -21,6 +21,8 @@ const AdminCollections = lazy(() => import("./pages/admin/AdminCollections"));
 const AdminSiteContent = lazy(() => import("./pages/admin/AdminSiteContent"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminSubscribers = lazy(() => import("./pages/admin/AdminSubscribers"));
+const Welcome = lazy(() => import("./pages/Welcome"));
 const router = createBrowserRouter([
   {
     path: "/",
@@ -35,6 +37,7 @@ const router = createBrowserRouter([
       { path: "order-success", element: <OrderSuccess /> },
       { path: "shop", element: <Shop /> },
       { path: "info", element: <Info /> },
+      { path: "welcome", element: <Welcome /> },
       { path: "admin/login", element: <AdminLogin /> },
       {
         path: "admin",
@@ -48,6 +51,7 @@ const router = createBrowserRouter([
           { path: "site-content", element: <AdminSiteContent /> },
           { path: "music", element: <AdminMusic /> },
           { path: "orders", element: <AdminOrders /> },
+          { path: "subscribers", element: <AdminSubscribers /> },
         ],
       },
     ],

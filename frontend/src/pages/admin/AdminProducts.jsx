@@ -336,6 +336,20 @@ function AdminProducts() {
     await api.delete(`/products/${id}`);
     loadProducts();
   }
+  const [notifyingId, setNotifyingId] = useState(null);
+  async function handleNotifySubscribers(productId) {
+    setNotifyingId(productId);
+    try {
+      await api.post(`/campaigns/notify-product/${productId}`);
+      showToast("Subscribers notified.", "success");
+    } catch (err) {
+      showToast(
+        err.response?.data?.error || "Could not notify subscribers. Please try again.",
+      );
+    } finally {
+      setNotifyingId(null);
+    }
+  }
 
   // Variants
   async function handleAddVariant(e) {
@@ -570,6 +584,13 @@ function AdminProducts() {
                 </div>
               </div>
               <div className="flex items-center gap-4 sm:ml-auto">
+                <button
+                  onClick={() => handleNotifySubscribers(p.id)}
+                  disabled={notifyingId === p.id}
+                  className="text-xs uppercase tracking-[0.2em] text-ink/60 hover:text-ink transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {notifyingId === p.id ? "Sending..." : "Notify Subscribers"}
+                </button>
                 <button
                   onClick={() => startEdit(p.id)}
                   className="text-xs uppercase tracking-[0.2em] text-ink/60 hover:text-ink transition-colors cursor-pointer"

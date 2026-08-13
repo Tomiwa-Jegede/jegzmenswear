@@ -132,6 +132,7 @@ async function createPendingOrder(req, res, next) {
       deliveryAddress,
       paymentReference, // this is the client-generated tx_ref
       buyNowItem,
+      discountCode,
     } = req.body;
 
     const method = fulfillmentMethod === "PICKUP" ? "PICKUP" : "DELIVERY";
@@ -168,7 +169,24 @@ async function createPendingOrder(req, res, next) {
       0,
     );
     const deliveryFee = method === "PICKUP" ? 0 : DELIVERY_FEE;
-    const totalAmount = subtotal + deliveryFee;
+
+    let discountAmount = 0;
+    let appliedDiscountCode = null;
+    if (discountCode) {
+      const dc = await prisma.discountCode.findUnique({
+        where: { code: String(discountCode).trim().toUpperCase() },
+      });
+      if (!dc || dc.isUsed) {
+        const err = new Error("Invalid or already used discount code");
+        err.status = 400;
+        throw err;
+      }
+      const totalQuantity = orderItemsSource.reduce((sum, i) => sum + i.quantity, 0);
+      discountAmount = Math.min(Number(dc.amount) * totalQuantity, subtotal + deliveryFee);
+      appliedDiscountCode = dc.code;
+    }
+
+    const totalAmount = subtotal + deliveryFee - discountAmount;
 
     const order = await prisma.order.create({
       data: {
@@ -179,6 +197,8 @@ async function createPendingOrder(req, res, next) {
         deliveryAddress: method === "PICKUP" ? null : deliveryAddress,
         subtotal,
         deliveryFee,
+        discountAmount,
+        appliedDiscountCode,
         totalAmount,
         paymentReference: String(paymentReference),
         paymentStatus: "PENDING",
@@ -225,6 +245,18 @@ async function verifyAndMarkPaid(order) {
     const err = new Error("Paid amount does not match order total");
     err.status = 402;
     throw err;
+  }
+
+  if (order.appliedDiscountCode) {
+    const lockResult = await prisma.discountCode.updateMany({
+      where: { code: order.appliedDiscountCode, isUsed: false },
+      data: { isUsed: true, usedAt: new Date(), orderId: order.id },
+    });
+    if (lockResult.count === 0) {
+      console.warn(
+        `Discount code ${order.appliedDiscountCode} was already used when confirming order ${order.id}`,
+      );
+    }
   }
 
   return prisma.order.update({

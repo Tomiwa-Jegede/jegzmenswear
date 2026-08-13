@@ -70,6 +70,10 @@ function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [scriptReady, setScriptReady] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [discountError, setDiscountError] = useState("");
+  const [checkingDiscount, setCheckingDiscount] = useState(false);
 
   useEffect(() => {
     loadFlutterwaveScript()
@@ -93,7 +97,11 @@ function Checkout() {
 
   const [fulfillmentMethod, setFulfillmentMethod] = useState("DELIVERY");
   const effectiveDeliveryFee = fulfillmentMethod === "PICKUP" ? 0 : DELIVERY_FEE;
-  const grandTotal = effectiveSubtotal + effectiveDeliveryFee;
+  const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
+  const discountAmount = appliedDiscount
+    ? Math.min(appliedDiscount.amount * totalQuantity, effectiveSubtotal + effectiveDeliveryFee)
+    : 0;
+  const grandTotal = effectiveSubtotal + effectiveDeliveryFee - discountAmount;
 
   function updateField(field, value) {
     setForm((prev) => {
@@ -105,6 +113,28 @@ function Checkout() {
       }
       return next;
     });
+  }
+
+  async function applyDiscountCode() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCheckingDiscount(true);
+    setDiscountError("");
+    try {
+      const res = await api.get(`/discount-codes/${encodeURIComponent(code)}`);
+      setAppliedDiscount({ code, amount: Number(res.data.amount) });
+    } catch (err) {
+      setAppliedDiscount(null);
+      setDiscountError(err.response?.data?.error || "Invalid or already used code");
+    } finally {
+      setCheckingDiscount(false);
+    }
+  }
+
+  function removeDiscountCode() {
+    setAppliedDiscount(null);
+    setCouponInput("");
+    setDiscountError("");
   }
 
   function isFormValid() {
@@ -134,8 +164,9 @@ function Checkout() {
 
     const txRef = `onfleek-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+    let pendingOrder;
     try {
-      await api.post("/orders/pending", {
+      const res = await api.post("/orders/pending", {
         customerName: form.customerName.trim(),
         phoneNumber: form.phoneNumber.trim(),
         customerEmail: form.customerEmail.trim(),
@@ -145,7 +176,9 @@ function Checkout() {
           : {}),
         paymentReference: txRef,
         ...(buyNowItem ? { buyNowItem } : {}),
+        ...(appliedDiscount ? { discountCode: appliedDiscount.code } : {}),
       });
+      pendingOrder = res.data;
     } catch (err) {
       setSubmitting(false);
       showToast(
@@ -157,7 +190,7 @@ function Checkout() {
     window.FlutterwaveCheckout({
       public_key: FLUTTERWAVE_PUBLIC_KEY,
       tx_ref: txRef,
-      amount: grandTotal,
+      amount: Number(pendingOrder.totalAmount),
       currency: "NGN",
       payment_options: "card, banktransfer, ussd",
       customer: {
@@ -335,6 +368,48 @@ function Checkout() {
 
       <section className="mb-10">
         <h2 className="font-serif text-xl text-ink mb-4">Order Summary</h2>
+
+        <div className="mb-6">
+          <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+            Discount Code
+          </label>
+          {appliedDiscount ? (
+            <div className="flex items-center justify-between border border-ink/20 px-4 py-2 text-sm">
+              <span className="text-ink">
+                {appliedDiscount.code} applied — ₦{appliedDiscount.amount.toLocaleString()} off
+              </span>
+              <button
+                type="button"
+                onClick={removeDiscountCode}
+                className="text-xs uppercase tracking-[0.15em] text-ink/50 hover:text-ink cursor-pointer"
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
+                placeholder="Enter code"
+                className="flex-1 border border-ink/20 px-4 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={applyDiscountCode}
+                disabled={checkingDiscount || !couponInput.trim()}
+                className="border border-ink/20 px-5 py-2 text-xs uppercase tracking-[0.15em] text-ink/70 hover:border-ink hover:text-ink transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {checkingDiscount ? "Checking..." : "Apply"}
+              </button>
+            </div>
+          )}
+          {discountError && (
+            <p className="text-xs text-red-600 mt-2">{discountError}</p>
+          )}
+        </div>
+
         <div className="divide-y divide-ink/10 border-t border-b border-ink/10">
           {displayItems.map((item) => (
             <div key={item.id} className="flex justify-between py-3 text-sm">
@@ -362,7 +437,16 @@ function Checkout() {
           </div>
           <div className="flex justify-between text-lg font-serif text-ink pt-2 border-t border-ink/10">
             <span>Grand Total</span>
-            <span>₦{grandTotal.toLocaleString()}</span>
+            {appliedDiscount ? (
+              <span className="flex items-center gap-2">
+                <span className="text-ink/40 line-through text-base">
+                  ₦{(effectiveSubtotal + effectiveDeliveryFee).toLocaleString()}
+                </span>
+                <span>₦{grandTotal.toLocaleString()}</span>
+              </span>
+            ) : (
+              <span>₦{grandTotal.toLocaleString()}</span>
+            )}
           </div>
         </div>
       </section>

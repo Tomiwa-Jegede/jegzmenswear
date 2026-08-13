@@ -36,7 +36,6 @@ export function CartProvider({ children }) {
       ...(measurements ? { measurements } : {}),
     });
     setCart(res.data);
-    setIsOpen(true);
     if (typeof window.gtag === "function") {
       const item = res.data.items.find((i) => i.variant.id === variantId);
       if (item) {

@@ -169,6 +169,29 @@ model HeroImage {
   updatedAt         DateTime @updatedAt
 }
 
+model Subscriber {
+  id                 String        @id @default(cuid())
+  email              String        @unique
+  verified           Boolean       @default(false)
+  verificationToken  String?       @unique
+  brevoSynced        Boolean       @default(false)
+  discountCode       DiscountCode?
+  createdAt          DateTime      @default(now())
+}
+
+model DiscountCode {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  amount       Decimal   @default(1000) @db.Decimal(10, 2)
+  subscriberId String    @unique
+  subscriber   Subscriber @relation(fields: [subscriberId], references: [id])
+  isUsed       Boolean   @default(false)
+  usedAt       DateTime?
+  orderId      String?   @unique
+  order        Order?    @relation(fields: [orderId], references: [id])
+  createdAt    DateTime  @default(now())
+}
+
 enum PaymentStatus {
   PENDING
   PAID
@@ -200,6 +223,9 @@ model Order {
   paymentReference String        @unique
   paymentStatus    PaymentStatus @default(PENDING)
   orderStatus      OrderStatus   @default(PENDING)
+  discountAmount      Decimal       @default(0) @db.Decimal(10, 2)
+  appliedDiscountCode String?
+  discountCode        DiscountCode?
   items            OrderItem[]
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
