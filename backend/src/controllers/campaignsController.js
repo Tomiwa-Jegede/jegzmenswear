@@ -28,7 +28,7 @@ async function notifyNewProduct(req, res, next) {
     const productUrl = `${siteUrl}/products/${product.slug}`;
     const htmlContent = `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; text-align: center; background: #faf8f5; padding: 32px 24px;">
-        <p style="color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 12px;">Just Dropped</p>
+        <p style="color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 12px;">NEW ARRIVAL</p>
         <h1 style="color: #111; font-size: 24px; margin: 0 0 4px; letter-spacing: 1px;">${product.name}</h1>
         <p style="color: #888; font-size: 13px; margin: 0 0 20px;">Fresh in. Take a look.</p>
         <img src="${image.url}" alt="${product.name}" style="width: 100%; max-width: 400px; height: auto; margin-bottom: 20px; border-radius: 2px;" />
