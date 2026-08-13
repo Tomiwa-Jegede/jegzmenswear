@@ -10,6 +10,7 @@ function NewsletterPopup() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
 
   const dismiss = useCallback(() => {
     setVisible(false);
@@ -43,7 +44,8 @@ function NewsletterPopup() {
     setStatus("submitting");
     setError("");
     try {
-      await api.post("/subscribers", { email });
+      const res = await api.post("/subscribers", { email });
+      setAlreadySubscribed(Boolean(res.data?.alreadySubscribed));
       setStatus("submitted");
       localStorage.setItem(STORAGE_KEY, String(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000));
     } catch (err) {
@@ -80,8 +82,14 @@ function NewsletterPopup() {
 
         {status === "submitted" ? (
           <>
-            <h2 className="font-serif text-2xl text-ink mb-3">You're on the list ✓</h2>
-            <p className="text-sm text-ink/60">Check your email to confirm and get your discount code.</p>
+            <h2 className="font-serif text-2xl text-ink mb-3">
+              {alreadySubscribed ? "You're already on the list ✓" : "You're on the list ✓"}
+            </h2>
+            <p className="text-sm text-ink/60">
+              {alreadySubscribed
+                ? "This email is already confirmed — check your inbox for your discount code."
+                : "Check your email to confirm and get your discount code."}
+            </p>
           </>
         ) : (
           <>
