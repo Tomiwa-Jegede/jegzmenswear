@@ -435,7 +435,7 @@ function MainLayout() {
       <CartDrawer />
       {!showMaintenance && <WhatsAppBubble />}
       {!showMaintenance && <DiscountBadge />}
-      {!showMaintenance && <NewsletterPopup />}
+      {!showMaintenance && !isAuthenticated && <NewsletterPopup />}
     </div>
   );
 }
