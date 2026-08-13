@@ -54,6 +54,18 @@ function ProductPage() {
     });
   }, [product]);
 
+  useEffect(() => {
+    if (!product || typeof window.ttq === "undefined") return;
+    window.ttq.track("ViewContent", {
+      content_id: product.id,
+      content_name: product.name,
+      content_category: product.collection?.name,
+      price: Number(product.price),
+      value: Number(product.price),
+      currency: "NGN",
+    });
+  }, [product]);
+
   if (!product) {
   return (
     <div className="px-6 py-12 grid gap-10 md:grid-cols-2 max-w-5xl mx-auto animate-pulse">

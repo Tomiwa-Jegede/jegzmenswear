@@ -96,6 +96,21 @@ function Checkout() {
     });
   }, [loading]);
 
+  useEffect(() => {
+    if (loading || typeof window.ttq === "undefined") return;
+    if (!buyNowItem && cart.items.length === 0) return;
+    window.ttq.track("InitiateCheckout", {
+      value: effectiveSubtotal + DELIVERY_FEE,
+      currency: "NGN",
+      contents: displayItems.map((item) => ({
+        content_id: item.variant.product.name,
+        content_name: item.variant.product.name,
+        price: Number(item.variant.product.price),
+        quantity: item.quantity,
+      })),
+    });
+  }, [loading]);
+
   const [fulfillmentMethod, setFulfillmentMethod] = useState("DELIVERY");
   const effectiveDeliveryFee =
     fulfillmentMethod === "PICKUP" || effectiveSubtotal >= FREE_DELIVERY_THRESHOLD
