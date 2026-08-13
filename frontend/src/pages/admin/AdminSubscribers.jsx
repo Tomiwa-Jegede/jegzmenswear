@@ -14,7 +14,7 @@ function AdminSubscribers() {
   }, []);
 
   return (
-    <div className="px-6 py-12 max-w-2xl">
+    <div className="px-4 sm:px-6 py-12 max-w-2xl">
       <div className="mb-10 flex items-center justify-between">
         <h1 className="font-serif text-3xl text-ink">Subscribers</h1>
         <span className="text-xs uppercase tracking-[0.15em] text-ink/50">
@@ -31,10 +31,10 @@ function AdminSubscribers() {
           {subscribers.map((s) => (
             <li
               key={s.id}
-              className="flex items-center justify-between px-6 py-4 text-sm"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-4 sm:px-6 py-4 text-sm"
             >
-              <span className="text-ink">{s.email}</span>
-              <div className="flex items-center gap-4">
+              <span className="text-ink break-all">{s.email}</span>
+              <div className="flex items-center gap-4 shrink-0">
                 <span
                   className={`text-xs uppercase tracking-[0.15em] ${
                     s.brevoSynced ? "text-green-600" : "text-red-600"
