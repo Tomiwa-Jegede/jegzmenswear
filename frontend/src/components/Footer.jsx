@@ -63,9 +63,13 @@ function Footer() {
           Refund Policy &amp; Delivery Info
         </Link>
         <div className="flex gap-6 items-center">
-          <IconInstagram className="h-5 w-5 text-ink/60 hover:text-ink transition-colors" />
-          <IconTikTok className="h-5 w-5 text-ink/60 hover:text-ink transition-colors" />
-          <IconPinterest className="h-5 w-5 text-ink/60 hover:text-ink transition-colors" />
+          <a href="https://www.tiktok.com/@jegzmenswear?_r=1&_t=ZS-98qOpI7At6a"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="TikTok"
+          >
+            <IconTikTok className="h-5 w-5 text-ink/60 hover:text-ink transition-colors" />
+          </a>
         </div>
       </div>
     </footer>
