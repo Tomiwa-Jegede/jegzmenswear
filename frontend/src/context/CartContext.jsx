@@ -53,6 +53,19 @@ export function CartProvider({ children }) {
         });
       }
     }
+    if (typeof window.ttq !== "undefined") {
+      const item = res.data.items.find((i) => i.variant.id === variantId);
+      if (item) {
+        window.ttq.track("AddToCart", {
+          content_id: item.variant.product.id,
+          content_name: item.variant.product.name,
+          quantity,
+          price: Number(item.variant.product.price),
+          value: Number(item.variant.product.price) * quantity,
+          currency: "NGN",
+        });
+      }
+    }
   };
 
   const updateQuantity = async (itemId, quantity) => {

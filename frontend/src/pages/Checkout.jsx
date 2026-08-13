@@ -221,6 +221,18 @@ function Checkout() {
         await refreshCart();
       }
       localStorage.removeItem(CHECKOUT_FORM_STORAGE_KEY);
+      if (typeof window.ttq !== "undefined") {
+        window.ttq.track("CompletePayment", {
+          value: grandTotal,
+          currency: "NGN",
+          contents: displayItems.map((item) => ({
+            content_id: item.variant.product.name,
+            content_name: item.variant.product.name,
+            price: Number(item.variant.product.price),
+            quantity: item.quantity,
+          })),
+        });
+      }
       showToast("Payment successful! Your order has been placed.", "success");
       navigate("/order-success", {
         state: {
