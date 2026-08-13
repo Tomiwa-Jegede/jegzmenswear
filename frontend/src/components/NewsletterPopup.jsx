@@ -96,7 +96,7 @@ function NewsletterPopup() {
             <p className="text-xs uppercase tracking-[0.3em] text-burgundy mb-4">
               Before you go
             </p>
-            <h2 className="font-serif text-2xl text-ink mb-3">Get ₦1,000 off every item on your first order.</h2>
+            <h2 className="font-serif text-2xl text-ink mb-3">Get 10% off every item on your first order.</h2>
             <p className="text-sm text-ink/60 mb-6">
               Sign up for new drops, restocks, and exclusive access.
             </p>
