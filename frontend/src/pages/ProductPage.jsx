@@ -140,6 +140,7 @@ function ProductPage() {
         buyNowItem: {
           variantId: selectedVariant.id,
           quantity: 1,
+          productId: product.id,
           productName: product.name,
           size: selectedVariant.size,
           price: Number(product.price),

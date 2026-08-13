@@ -36,7 +36,7 @@ function Checkout() {
           quantity: buyNowItem.quantity,
           variant: {
             size: buyNowItem.size,
-            product: { name: buyNowItem.productName, price: buyNowItem.price },
+            product: { id: buyNowItem.productId, name: buyNowItem.productName, price: buyNowItem.price },
           },
         },
       ]
@@ -103,7 +103,7 @@ function Checkout() {
       value: effectiveSubtotal + DELIVERY_FEE,
       currency: "NGN",
       contents: displayItems.map((item) => ({
-        content_id: item.variant.product.name,
+        content_id: item.variant.product.id,
         content_name: item.variant.product.name,
         price: Number(item.variant.product.price),
         quantity: item.quantity,
@@ -241,7 +241,7 @@ function Checkout() {
           value: grandTotal,
           currency: "NGN",
           contents: displayItems.map((item) => ({
-            content_id: item.variant.product.name,
+            content_id: item.variant.product.id,
             content_name: item.variant.product.name,
             price: Number(item.variant.product.price),
             quantity: item.quantity,
