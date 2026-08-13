@@ -2,6 +2,7 @@ const https = require("https");
 const prisma = require("../lib/prisma");
 
 const DELIVERY_FEE = 3000; // NGN — keep in sync with frontend DELIVERY_FEE constant
+const FREE_DELIVERY_THRESHOLD = 200000; // NGN — keep in sync with frontend FREE_DELIVERY_THRESHOLD constant
 
 const orderInclude = {
   items: {
@@ -168,7 +169,8 @@ async function createPendingOrder(req, res, next) {
       (sum, i) => sum + Number(i.variant.product.price) * i.quantity,
       0,
     );
-    const deliveryFee = method === "PICKUP" ? 0 : DELIVERY_FEE;
+    const deliveryFee =
+      method === "PICKUP" || subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
 
     let discountAmount = 0;
     let appliedDiscountCode = null;

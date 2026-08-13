@@ -5,6 +5,7 @@ import { useToast } from "../context/ToastContext";
 import api from "../lib/axios";
 
 const DELIVERY_FEE = 3000; // NGN — keep in sync with backend DELIVERY_FEE constant
+const FREE_DELIVERY_THRESHOLD = 200000; // NGN — keep in sync with backend FREE_DELIVERY_THRESHOLD constant
 const FLUTTERWAVE_PUBLIC_KEY = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY;
 
 function loadFlutterwaveScript() {
@@ -96,7 +97,10 @@ function Checkout() {
   }, [loading]);
 
   const [fulfillmentMethod, setFulfillmentMethod] = useState("DELIVERY");
-  const effectiveDeliveryFee = fulfillmentMethod === "PICKUP" ? 0 : DELIVERY_FEE;
+  const effectiveDeliveryFee =
+    fulfillmentMethod === "PICKUP" || effectiveSubtotal >= FREE_DELIVERY_THRESHOLD
+      ? 0
+      : DELIVERY_FEE;
   const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
   const discountAmount = appliedDiscount
     ? Math.min(appliedDiscount.amount * totalQuantity, effectiveSubtotal + effectiveDeliveryFee)
@@ -430,7 +434,7 @@ function Checkout() {
           <div className="flex justify-between text-sm text-ink/70">
             <span>Delivery Fee</span>
             <span>
-              {fulfillmentMethod === "PICKUP"
+              {effectiveDeliveryFee === 0
                 ? "Free"
                 : `₦${DELIVERY_FEE.toLocaleString()}`}
             </span>
