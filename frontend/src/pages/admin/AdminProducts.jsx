@@ -5,6 +5,13 @@ import api from "../../lib/axios";
 import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import Skeleton from "../../components/ui/Skeleton";
 import ZoomFocalEditor from "../../components/ZoomFocalEditor";
+import {
+  IconEdit,
+  IconTrash,
+  IconRefresh,
+  IconArchive,
+  IconBell,
+} from "../../components/icons";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "Custom"];
 
@@ -594,15 +601,16 @@ function AdminProducts() {
         >
           ← Back to Admin
         </Link>
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <h1 className="font-serif text-3xl text-ink">Products</h1>
           <div className="flex items-center gap-4">
             <button
               onClick={handleDeleteAllArchived}
               disabled={deletingArchived}
+              title="Delete All Archived"
               className="text-xs uppercase tracking-[0.2em] text-red-600 hover:text-red-800 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {deletingArchived ? "Deleting..." : "Delete All Archived"}
+              {deletingArchived ? "Deleting..." : "Delete Archived"}
             </button>
             <button
               onClick={startCreate}
@@ -713,39 +721,48 @@ function AdminProducts() {
                 {(p.isStale || !p.isActive) && (
                   <button
                     onClick={() => handleRenewProduct(p.id)}
-                    className="text-xs uppercase tracking-[0.2em] text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer"
+                    title="Renew"
+                    aria-label="Renew"
+                    className="text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer"
                   >
-                    Renew
+                    <IconRefresh />
                   </button>
                 )}
                 {p.isActive && (
                   <button
                     onClick={() => handleArchiveProduct(p.id)}
-                    className="text-xs uppercase tracking-[0.2em] text-ink/60 hover:text-ink transition-colors cursor-pointer"
+                    title="Archive"
+                    aria-label="Archive"
+                    className="text-ink/60 hover:text-ink transition-colors cursor-pointer"
                   >
-                    Archive
+                    <IconArchive />
                   </button>
                 )}
                 <button
                   onClick={() => handleNotifySubscribers(p.id)}
                   disabled={notifyingId === p.id}
-                  className="text-xs uppercase tracking-[0.2em] text-ink/60 hover:text-ink transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  title={notifyingId === p.id ? "Sending..." : "Notify Subscribers"}
+                  aria-label="Notify Subscribers"
+                  className="text-ink/60 hover:text-ink transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {notifyingId === p.id ? "Sending..." : "Notify Subscribers"}
+                  <IconBell />
                 </button>
                 <button
                   onClick={() => startEdit(p.id)}
-                  className="text-xs uppercase tracking-[0.2em] text-ink/60 hover:text-ink transition-colors cursor-pointer"
+                  title="Edit"
+                  aria-label="Edit"
+                  className="text-ink/60 hover:text-ink transition-colors cursor-pointer"
                 >
-                  Edit
+                  <IconEdit />
                 </button>
                 <button
                   onClick={() => handleDeleteProduct(p.id)}
                   disabled={p.hasOrders}
-                  title={p.hasOrders ? "Has order history — archive instead" : ""}
-                  className="text-xs uppercase tracking-[0.2em] text-red-600 hover:text-red-800 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  title={p.hasOrders ? "Has order history — archive instead" : "Delete"}
+                  aria-label="Delete"
+                  className="text-red-600 hover:text-red-800 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  Delete
+                  <IconTrash />
                 </button>
               </div>
             </li>

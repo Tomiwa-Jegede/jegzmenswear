@@ -383,3 +383,62 @@ export function IconHome({ className = "" }) {
     </svg>
   );
 }
+
+export function IconRefresh({ className = "" }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M13.5 8a5.5 5.5 0 01-9.6 3.6M2.5 8a5.5 5.5 0 019.6-3.6" />
+      <path d="M13.5 4v3.5H10" />
+      <path d="M2.5 12V8.5H6" />
+    </svg>
+  );
+}
+
+export function IconArchive({ className = "" }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect x="2" y="2.5" width="12" height="3" rx="0.5" />
+      <path d="M2.8 5.5V12a1 1 0 001 1h8.4a1 1 0 001-1V5.5" />
+      <path d="M6.5 8h3" />
+    </svg>
+  );
+}
+
+export function IconBell({ className = "" }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M8 2a3.5 3.5 0 00-3.5 3.5v2.3L3 10.5h10L11.5 7.8V5.5A3.5 3.5 0 008 2z" />
+      <path d="M6.5 12.5a1.5 1.5 0 003 0" />
+    </svg>
+  );
+}
