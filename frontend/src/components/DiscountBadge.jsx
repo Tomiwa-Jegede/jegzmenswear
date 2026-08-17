@@ -22,7 +22,7 @@ function DiscountBadge() {
       .get(`/discount-codes/${encodeURIComponent(stored.code)}`)
       .then((res) => {
         if (res.data.valid) {
-          setDiscount({ code: stored.code, amount: Number(res.data.amount) });
+          setDiscount({ code: stored.code, percentage: Number(res.data.percentage) });
         } else {
           localStorage.removeItem(STORAGE_KEY);
           setDiscount(null);
@@ -56,7 +56,7 @@ function DiscountBadge() {
       className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-ink text-offwhite text-xs uppercase tracking-[0.15em] shadow-lg hover:scale-105 transition-transform cursor-pointer"
       title="Click to copy your discount code"
     >
-      {copied ? "Copied!" : `🎉 ${discount.code} — ₦${discount.amount.toLocaleString()} off`}
+      {copied ? "Copied!" : `🎉 ${discount.code} — ${discount.percentage}% off`}
     </button>
   );
 }

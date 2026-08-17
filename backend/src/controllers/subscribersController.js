@@ -95,7 +95,7 @@ async function verifyEmail(req, res, next) {
     }
 
     res.redirect(
-      `${clientUrl}/welcome?code=${encodeURIComponent(discountCode.code)}&amount=${Number(discountCode.amount)}`,
+      `${clientUrl}/welcome?code=${encodeURIComponent(discountCode.code)}&percentage=${Number(discountCode.percentage)}`,
     );
   } catch (err) {
     next(err);
@@ -113,4 +113,17 @@ async function listSubscribers(req, res, next) {
   }
 }
 
-module.exports = { subscribe, verifyEmail, listSubscribers };
+const UNVERIFIED_STALE_MS = 10 * 60 * 1000;
+
+async function deleteStaleUnverifiedSubscribers() {
+  const staleThreshold = new Date(Date.now() - UNVERIFIED_STALE_MS);
+  const result = await prisma.subscriber.deleteMany({
+    where: { verified: false, createdAt: { lt: staleThreshold } },
+  });
+  if (result.count > 0) {
+    console.log(`[stale-subscribers] Removed ${result.count} unverified subscriber(s) past 10 minutes.`);
+  }
+  return result.count;
+}
+
+module.exports = { subscribe, verifyEmail, listSubscribers, deleteStaleUnverifiedSubscribers };

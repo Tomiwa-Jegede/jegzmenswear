@@ -5,6 +5,7 @@ const cron = require("node-cron");
 require("dotenv").config();
 
 const { autoArchiveStaleProducts } = require("./controllers/productsController");
+const { deleteStaleUnverifiedSubscribers } = require("./controllers/subscribersController");
 
 const collectionsRouter = require("./routes/collections");
 const productsRouter = require("./routes/products");
@@ -105,5 +106,11 @@ app.listen(PORT, () => {
 cron.schedule("0 0 * * *", () => {
   autoArchiveStaleProducts().catch((err) =>
     console.error("[auto-archive] Failed on scheduled run:", err.message),
+  );
+});
+// Run every 5 minutes to remove unverified subscribers older than 10 minutes
+cron.schedule("*/5 * * * *", () => {
+  deleteStaleUnverifiedSubscribers().catch((err) =>
+    console.error("[stale-subscribers] Failed on scheduled run:", err.message),
   );
 });

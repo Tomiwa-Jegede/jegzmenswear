@@ -310,7 +310,7 @@ function ProductPage() {
                 key={v.id}
                 disabled={v.stock < 1}
                 onClick={() => setSelectedVariantId(v.id)}
-                className={`font-sans rounded-full! px-5 py-2text-sm border transition-colors ${
+                className={`font-sans rounded-full px-5 py-2 text-sm border transition-colors ${
                   v.id === selectedVariantId
                     ? "border-ink bg-ink text-offwhite"
                     : "border-ink/20 text-ink/70"
@@ -327,7 +327,7 @@ function ProductPage() {
           disabled={
             !selectedVariant || selectedVariant.stock < 1 || status === "adding"
           }
-          className="font-sans w-full bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 rounded-smhover:bg-charcoal transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+          className="font-sans w-full bg-ink text-offwhite text-sm uppercase tracking-[0.2em] py-4 rounded-sm hover:bg-charcoal transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
         >
           {status === "adding"
             ? "Adding..."
@@ -341,7 +341,7 @@ function ProductPage() {
           <button
             onClick={handleBuyNow}
             disabled={status === "adding"}
-            className="font-sans w-full bg-transparent borderborder-ink text-ink text-sm uppercase tracking-[0.2em] py-4 mt-3 hover:bg-ink hover:text-offwhite transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+            className="font-sans w-full bg-transparent border border-ink text-ink text-sm uppercase tracking-[0.2em] py-4 mt-3 hover:bg-ink hover:text-offwhite transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
           >
             {isNative ? "Sew Now" : "Buy Now"}
           </button>

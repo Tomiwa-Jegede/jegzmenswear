@@ -37,21 +37,23 @@ function AdminLogin() {
       >
         <h1 className="font-serif text-2xl text-ink mb-6">Welcome Back</h1>
         
-        <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+        <label htmlFor="admin-username" className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
           Username
         </label>
         <input
+          id="admin-username"
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className="w-full border border-ink/20 px-4 py-2 mb-4 text-sm"
           required
         />
-        <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+        <label htmlFor="admin-password" className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
           Password
         </label>
         <div className="relative mb-6">
           <input
+            id="admin-password"
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}

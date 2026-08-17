@@ -622,10 +622,10 @@ function AdminProducts() {
               onChange={(e) => setFilterCollectionId(e.target.value)}
               className="w-full border border-ink/20 px-4 py-2 text-sm bg-offwhite"
             >
-              <option value="">All Collections</option>
+              <option value="">All Collections ({products.length})</option>
               {collections.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.name} ({products.filter((p) => p.collectionId === c.id).length})
                 </option>
               ))}
             </select>
