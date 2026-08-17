@@ -9,6 +9,8 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  renewProduct,
+  deleteArchivedProducts,
 } = require("../controllers/productsController");
 const {
   createProductImage,
@@ -27,7 +29,9 @@ router.get("/admin/:id", requireAdmin, getProductByIdAdmin);
 router.get("/:slug", getProductBySlug);
 router.post("/", requireAdmin, createProduct);
 router.put("/:id", requireAdmin, updateProduct);
+router.delete("/archived", requireAdmin, deleteArchivedProducts);
 router.delete("/:id", requireAdmin, deleteProduct);
+router.patch("/:id/renew", requireAdmin, renewProduct);
 
 router.post("/:id/images", requireAdmin, createProductImage);
 router.put("/images/:imageId", requireAdmin, updateProductImage);

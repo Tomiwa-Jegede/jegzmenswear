@@ -1,7 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const cron = require("node-cron");
 require("dotenv").config();
+
+const { autoArchiveStaleProducts } = require("./controllers/productsController");
 
 const collectionsRouter = require("./routes/collections");
 const productsRouter = require("./routes/products");
@@ -93,4 +96,14 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Onfleek backend running on http://localhost:${PORT}`);
+  autoArchiveStaleProducts().catch((err) =>
+    console.error("[auto-archive] Failed on startup run:", err.message),
+  );
+});
+
+// Run once daily at midnight server time
+cron.schedule("0 0 * * *", () => {
+  autoArchiveStaleProducts().catch((err) =>
+    console.error("[auto-archive] Failed on scheduled run:", err.message),
+  );
 });

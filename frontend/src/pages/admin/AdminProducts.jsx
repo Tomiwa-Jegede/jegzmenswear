@@ -42,6 +42,7 @@ function AdminProducts() {
   const PRODUCT_DRAFT_STORAGE_KEY = "onfleek_admin_product_draft";
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [filterStatus, setFilterStatus] = useState("");
   const [view, setView] = useState(() => {
     try {
       const saved = localStorage.getItem(PRODUCT_DRAFT_STORAGE_KEY);
@@ -333,8 +334,74 @@ function AdminProducts() {
   }
 
   async function handleDeleteProduct(id) {
-    await api.delete(`/products/${id}`);
-    loadProducts();
+    try {
+      await api.delete(`/products/${id}`);
+      loadProducts();
+    } catch (err) {
+      showToast(
+        err.response?.data?.error || "This product could not be deleted.",
+      );
+    }
+  }
+
+  async function handleRenewProduct(id) {
+    try {
+      await api.patch(`/products/${id}/renew`);
+      loadProducts();
+      showToast("Product renewed.", "success");
+    } catch (err) {
+      showToast("Could not renew this product. Please try again.");
+    }
+  }
+
+  async function handleArchiveProduct(id) {
+    try {
+      await api.put(`/products/${id}`, { isActive: false });
+      loadProducts();
+      showToast("Product archived.", "success");
+    } catch (err) {
+      showToast("Could not archive this product. Please try again.");
+    }
+  }
+
+  const [renewingAll, setRenewingAll] = useState(false);
+  async function handleRenewAllFiltered(filteredList) {
+    const archivedInView = filteredList.filter((p) => !p.isActive);
+    if (archivedInView.length === 0) {
+      showToast("No archived products match the current filters.");
+      return;
+    }
+    setRenewingAll(true);
+    try {
+      await Promise.all(
+        archivedInView.map((p) => api.patch(`/products/${p.id}/renew`)),
+      );
+      showToast(`Renewed ${archivedInView.length} product(s).`, "success");
+      loadProducts();
+    } catch (err) {
+      showToast("Some products could not be renewed. Please try again.");
+    } finally {
+      setRenewingAll(false);
+    }
+  }
+
+  const [deletingArchived, setDeletingArchived] = useState(false);
+  async function handleDeleteAllArchived() {
+    setDeletingArchived(true);
+    try {
+      const res = await api.delete("/products/archived");
+      showToast(
+        res.data.deletedCount > 0
+          ? `Deleted ${res.data.deletedCount} archived product(s) with no order history.`
+          : "No archived products were eligible for deletion.",
+        "success",
+      );
+      loadProducts();
+    } catch (err) {
+      showToast("Could not delete archived products. Please try again.");
+    } finally {
+      setDeletingArchived(false);
+    }
   }
   const [notifyingId, setNotifyingId] = useState(null);
   async function handleNotifySubscribers(productId) {
@@ -529,35 +596,93 @@ function AdminProducts() {
         </Link>
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-serif text-3xl text-ink">Products</h1>
-          <button
-            onClick={startCreate}
-            className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors cursor-pointer"
-          >
-            New Product
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleDeleteAllArchived}
+              disabled={deletingArchived}
+              className="text-xs uppercase tracking-[0.2em] text-red-600 hover:text-red-800 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {deletingArchived ? "Deleting..." : "Delete All Archived"}
+            </button>
+            <button
+              onClick={startCreate}
+              className="bg-ink text-offwhite px-6 py-3 text-sm uppercase tracking-[0.15em] hover:bg-charcoal transition-colors cursor-pointer"
+            >
+              New Product
+            </button>
+          </div>
         </div>
-        <div className="mb-6 max-w-xs">
-          <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
-            Filter by Collection
-          </label>
-          <select
-            value={filterCollectionId}
-            onChange={(e) => setFilterCollectionId(e.target.value)}
-            className="w-full border border-ink/20 px-4 py-2 text-sm bg-offwhite"
-          >
-            <option value="">All Collections</option>
-            {collections.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+        <div className="mb-6 flex flex-wrap gap-4">
+          <div className="max-w-xs w-full sm:w-auto">
+            <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+              Filter by Collection
+            </label>
+            <select
+              value={filterCollectionId}
+              onChange={(e) => setFilterCollectionId(e.target.value)}
+              className="w-full border border-ink/20 px-4 py-2 text-sm bg-offwhite"
+            >
+              <option value="">All Collections</option>
+              {collections.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="max-w-xs w-full sm:w-auto">
+            <label className="block text-xs uppercase tracking-[0.2em] text-ink/60 mb-2">
+              Filter by Status
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full border border-ink/20 px-4 py-2 text-sm bg-offwhite"
+            >
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
+              <option value="stale">Stale</option>
+            </select>
+          </div>
         </div>
+        {(() => {
+          const filteredProducts = products
+            .filter((p) =>
+              filterCollectionId ? p.collectionId === filterCollectionId : true,
+            )
+            .filter((p) => {
+              if (filterStatus === "active") return p.isActive;
+              if (filterStatus === "archived") return !p.isActive;
+              if (filterStatus === "stale") return p.isStale;
+              return true;
+            });
+          const archivedCount = filteredProducts.filter((p) => !p.isActive).length;
+          return (
+            archivedCount > 0 && (
+              <button
+                onClick={() => handleRenewAllFiltered(filteredProducts)}
+                disabled={renewingAll}
+                className="mb-4 text-xs uppercase tracking-[0.2em] text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {renewingAll
+                  ? "Renewing..."
+                  : `Renew All Archived in View (${archivedCount})`}
+              </button>
+            )
+          );
+        })()}
         <ul className="space-y-4">
           {products
             .filter((p) =>
               filterCollectionId ? p.collectionId === filterCollectionId : true,
             )
+            .filter((p) => {
+              if (filterStatus === "active") return p.isActive;
+              if (filterStatus === "archived") return !p.isActive;
+              if (filterStatus === "stale") return p.isStale;
+              return true;
+            })
             .map((p) => (
             <li
               key={p.id}
@@ -577,13 +702,30 @@ function AdminProducts() {
                   <p className="text-sm text-ink">{p.name}</p>
                   <p className="text-xs text-ink/50">
                     ₦{Number(p.price).toLocaleString()} ·{" "}
-                    {p.isActive ? "Active" : "Inactive"}
+                    {p.isActive ? "Active" : "Archived"}
                     {p.isFeatured ? " · Featured" : ""}
+                    {p.isStale ? " · Stale" : ""}
                   </p>
                   <p className="text-xs text-ink/40">{p.collection?.name}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 sm:ml-auto">
+              <div className="flex flex-wrap items-center gap-4 sm:ml-auto">
+                {(p.isStale || !p.isActive) && (
+                  <button
+                    onClick={() => handleRenewProduct(p.id)}
+                    className="text-xs uppercase tracking-[0.2em] text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer"
+                  >
+                    Renew
+                  </button>
+                )}
+                {p.isActive && (
+                  <button
+                    onClick={() => handleArchiveProduct(p.id)}
+                    className="text-xs uppercase tracking-[0.2em] text-ink/60 hover:text-ink transition-colors cursor-pointer"
+                  >
+                    Archive
+                  </button>
+                )}
                 <button
                   onClick={() => handleNotifySubscribers(p.id)}
                   disabled={notifyingId === p.id}
@@ -599,16 +741,46 @@ function AdminProducts() {
                 </button>
                 <button
                   onClick={() => handleDeleteProduct(p.id)}
-                  className="text-xs uppercase tracking-[0.2em] text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+                  disabled={p.hasOrders}
+                  title={p.hasOrders ? "Has order history — archive instead" : ""}
+                  className="text-xs uppercase tracking-[0.2em] text-red-600 hover:text-red-800 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Delete
                 </button>
               </div>
             </li>
           ))}
-          {products.length === 0 && (
-            <p className="text-sm text-ink/50">No products yet.</p>
-          )}
+          {(() => {
+            const filteredProducts = products
+              .filter((p) =>
+                filterCollectionId ? p.collectionId === filterCollectionId : true,
+              )
+              .filter((p) => {
+                if (filterStatus === "active") return p.isActive;
+                if (filterStatus === "archived") return !p.isActive;
+                if (filterStatus === "stale") return p.isStale;
+                return true;
+              });
+            if (filteredProducts.length > 0) return null;
+            if (products.length === 0) {
+              return <p className="text-sm text-ink/50">No products yet.</p>;
+            }
+            const collectionName = filterCollectionId
+              ? collections.find((c) => c.id === filterCollectionId)?.name
+              : null;
+            const scope = collectionName ? ` in ${collectionName}` : "";
+            const emptyMessages = {
+              archived: `No archived products${scope} — everything's live.`,
+              stale: `Nothing${scope} is stale yet — every product has been touched within the last 14 days.`,
+              active: `No active products${scope} match this filter.`,
+            };
+            return (
+              <p className="text-sm text-ink/50">
+                {emptyMessages[filterStatus] ||
+                  `No products${scope} match this filter.`}
+              </p>
+            );
+          })()}
         </ul>
       </div>
     );

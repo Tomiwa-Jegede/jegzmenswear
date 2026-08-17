@@ -43,19 +43,52 @@ async function getAllProducts(req, res, next) {
     next(err);
   }
 }
+const STALE_DAYS = 14;
+
 async function getAllProductsAdmin(req, res, next) {
   try {
     const products = await prisma.product.findMany({
       include: {
         collection: { select: { name: true, slug: true } },
         images: { orderBy: { position: "asc" }, take: 1 },
+        _count: { select: { orderItems: true } },
       },
       orderBy: { createdAt: "desc" },
     });
-    res.json(products);
+    const staleThreshold = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000);
+    const result = products.map(({ _count, ...p }) => ({
+      ...p,
+      hasOrders: _count.orderItems > 0,
+      isStale: p.isActive && p.renewedAt < staleThreshold,
+    }));
+    res.json(result);
   } catch (err) {
     next(err);
   }
+}
+
+async function renewProduct(req, res, next) {
+  try {
+    const product = await prisma.product.update({
+      where: { id: req.params.id },
+      data: { renewedAt: new Date(), isActive: true },
+    });
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function autoArchiveStaleProducts() {
+  const staleThreshold = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000);
+  const result = await prisma.product.updateMany({
+    where: { isActive: true, renewedAt: { lt: staleThreshold } },
+    data: { isActive: false },
+  });
+  if (result.count > 0) {
+    console.log(`[auto-archive] Archived ${result.count} product(s) past ${STALE_DAYS} days.`);
+  }
+  return result.count;
 }
 
 async function getProductByIdAdmin(req, res, next) {
@@ -156,8 +189,39 @@ async function updateProduct(req, res, next) {
 
 async function deleteProduct(req, res, next) {
   try {
+    const orderCount = await prisma.orderItem.count({
+      where: { productId: req.params.id },
+    });
+    if (orderCount > 0) {
+      const err = new Error(
+        "This product has order history and cannot be deleted. Archive it instead.",
+      );
+      err.status = 400;
+      throw err;
+    }
     await prisma.product.delete({ where: { id: req.params.id } });
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function deleteArchivedProducts(req, res, next) {
+  try {
+    const candidates = await prisma.product.findMany({
+      where: { isActive: false },
+      include: { _count: { select: { orderItems: true } } },
+    });
+    const deletableIds = candidates
+      .filter((p) => p._count.orderItems === 0)
+      .map((p) => p.id);
+    if (deletableIds.length === 0) {
+      return res.json({ deletedCount: 0 });
+    }
+    const result = await prisma.product.deleteMany({
+      where: { id: { in: deletableIds } },
+    });
+    res.json({ deletedCount: result.count });
   } catch (err) {
     next(err);
   }
@@ -171,4 +235,7 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  renewProduct,
+  deleteArchivedProducts,
+  autoArchiveStaleProducts,
 };

@@ -40,6 +40,7 @@ model Product {
   price        Decimal          @db.Decimal(10, 2)
   isFeatured   Boolean          @default(false)
   isActive     Boolean          @default(true)
+  renewedAt    DateTime         @default(now())
   collectionId String?
   collection   Collection?      @relation(fields: [collectionId], references: [id])
   images       ProductImage[]
