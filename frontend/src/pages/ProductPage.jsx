@@ -25,6 +25,7 @@ function ProductPage() {
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     api
@@ -179,8 +180,6 @@ function ProductPage() {
     }
     setPendingAction(null);
   };
-
-  const touchStartX = useRef(null);
 
   const handleImageTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
