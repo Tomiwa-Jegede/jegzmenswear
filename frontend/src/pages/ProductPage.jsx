@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import api from "../lib/axios";
@@ -180,6 +180,26 @@ function ProductPage() {
     setPendingAction(null);
   };
 
+  const touchStartX = useRef(null);
+
+  const handleImageTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleImageTouchEnd = (e) => {
+    if (touchStartX.current === null || product.images.length < 2) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const SWIPE_THRESHOLD = 50;
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
+      if (deltaX < 0) {
+        setActiveImageIndex((i) => (i + 1) % product.images.length);
+      } else {
+        setActiveImageIndex((i) => (i - 1 + product.images.length) % product.images.length);
+      }
+    }
+    touchStartX.current = null;
+  };
+
   return (
     <>
       <Helmet>
@@ -237,7 +257,11 @@ function ProductPage() {
       </button>
       <div className="grid gap-10 md:grid-cols-2">
       <div>
-        <div className="bg-cream aspect-[3/4] overflow-hidden relative">
+        <div
+          className="bg-cream aspect-[3/4] overflow-hidden relative"
+          onTouchStart={handleImageTouchStart}
+          onTouchEnd={handleImageTouchEnd}
+        >
           {product.images[activeImageIndex] && (
             <>
               <FadeImage
