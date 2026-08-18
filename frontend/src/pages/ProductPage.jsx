@@ -25,7 +25,12 @@ function ProductPage() {
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [dragOffsetX, setDragOffsetX] = useState(0);
+  const [swipeTransitionEnabled, setSwipeTransitionEnabled] = useState(false);
   const touchStartX = useRef(null);
+  const imageContainerRef = useRef(null);
+  const containerWidthRef = useRef(0);
+  const isSwipeAnimatingRef = useRef(false);
 
   useEffect(() => {
     api
@@ -181,23 +186,65 @@ function ProductPage() {
     setPendingAction(null);
   };
 
-  const handleImageTouchStart = (e) => {
+   const handleImageTouchStart = (e) => {
+    if (isSwipeAnimatingRef.current) return;
     touchStartX.current = e.touches[0].clientX;
+    containerWidthRef.current = imageContainerRef.current?.offsetWidth || 300;
+    setSwipeTransitionEnabled(false);
+  };
+
+  const handleImageTouchMove = (e) => {
+    if (touchStartX.current === null || product.images.length < 2) return;
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    setDragOffsetX(deltaX);
   };
 
   const handleImageTouchEnd = (e) => {
-    if (touchStartX.current === null || product.images.length < 2) return;
+    if (touchStartX.current === null) return;
     const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-    const SWIPE_THRESHOLD = 50;
-    if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
-      if (deltaX < 0) {
-        setActiveImageIndex((i) => (i + 1) % product.images.length);
-      } else {
-        setActiveImageIndex((i) => (i - 1 + product.images.length) % product.images.length);
-      }
-    }
     touchStartX.current = null;
+
+    const SWIPE_THRESHOLD = 50;
+    const width = containerWidthRef.current || 300;
+    setSwipeTransitionEnabled(true);
+    if (product.images.length > 1 && Math.abs(deltaX) > SWIPE_THRESHOLD) {
+      const direction = deltaX < 0 ? 1 : -1;
+      isSwipeAnimatingRef.current = true;
+      setDragOffsetX(direction === 1 ? -width : width);
+      setTimeout(() => {
+        setSwipeTransitionEnabled(false);
+        setActiveImageIndex((i) => (i + direction + product.images.length) % product.images.length);
+        setDragOffsetX(0);
+        isSwipeAnimatingRef.current = false;
+      }, 300);
+    } else {
+      setDragOffsetX(0);
+    }
   };
+
+  const renderImageLayer = (img) => (
+    <>
+      <FadeImage
+        src={optimizedImageUrl(img.url, 800)}
+        alt={img.altText || product.name}
+        className="h-full w-full object-cover sm:hidden"
+        style={{ objectPosition: getFocalPoint(img.mobileCropMode) }}
+      />
+      <FadeImage
+        src={optimizedImageUrl(img.url, 1000)}
+        alt={img.altText || product.name}
+        className="h-full w-full object-cover hidden sm:block"
+        style={{ objectPosition: getFocalPoint(img.desktopCropMode) }}
+      />
+    </>
+  );
+
+  const swipeWidth = containerWidthRef.current || imageContainerRef.current?.offsetWidth || 300;
+  const peekDirection = dragOffsetX < 0 ? 1 : dragOffsetX > 0 ? -1 : 0;
+  const peekIndex =
+    peekDirection !== 0 && product.images.length > 1
+      ? (activeImageIndex + peekDirection + product.images.length) % product.images.length
+      : null;
 
   return (
     <>
@@ -255,31 +302,35 @@ function ProductPage() {
         Back
       </button>
       <div className="grid gap-10 md:grid-cols-2">
-      <div>
+   <div className="min-w-0">
         <div
+          ref={imageContainerRef}
           className="bg-cream aspect-[3/4] overflow-hidden relative"
           onTouchStart={handleImageTouchStart}
+          onTouchMove={handleImageTouchMove}
           onTouchEnd={handleImageTouchEnd}
         >
           {product.images[activeImageIndex] && (
-            <>
-              <FadeImage
-                src={optimizedImageUrl(product.images[activeImageIndex].url, 800)}
-                alt={product.images[activeImageIndex].altText || product.name}
-                className="absolute inset-0 h-full w-full object-cover sm:hidden"
-                style={{
-                  objectPosition: getFocalPoint(product.images[activeImageIndex].mobileCropMode),
-                }}
-              />
-              <FadeImage
-                src={optimizedImageUrl(product.images[activeImageIndex].url, 1000)}
-                alt={product.images[activeImageIndex].altText || product.name}
-                className="absolute inset-0 h-full w-full object-cover hidden sm:block"
-                style={{
-                  objectPosition: getFocalPoint(product.images[activeImageIndex].desktopCropMode),
-                }}
-              />
-            </>
+            <div
+              className="absolute inset-0 h-full w-full"
+              style={{
+                transform: `translateX(${dragOffsetX}px)`,
+                transition: swipeTransitionEnabled ? "transform 300ms ease" : "none",
+              }}
+            >
+              {renderImageLayer(product.images[activeImageIndex])}
+            </div>
+          )}
+          {peekIndex !== null && product.images[peekIndex] && (
+            <div
+              className="absolute inset-0 h-full w-full"
+              style={{
+                transform: `translateX(${dragOffsetX + peekDirection * swipeWidth}px)`,
+                transition: swipeTransitionEnabled ? "transform 300ms ease" : "none",
+              }}
+            >
+              {renderImageLayer(product.images[peekIndex])}
+            </div>
           )}
         </div>
         {product.images.length > 1 && (
