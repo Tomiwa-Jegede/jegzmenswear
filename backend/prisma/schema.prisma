@@ -193,6 +193,44 @@ model DiscountCode {
   createdAt    DateTime  @default(now())
 }
 
+model ArewaConversation {
+  id        String         @id @default(cuid())
+  sessionId String         @unique
+  messages  ArewaMessage[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model ArewaMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   ArewaConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String // "user" | "assistant"
+  content        String
+  createdAt      DateTime          @default(now())
+}
+
+model ArewaConfig {
+  id                  String   @id @default(cuid())
+  name                String   @default("Arewa")
+  greeting            String   @default("Hi, I'm Arewa 👋🏽 Welcome to Jegz Menswear. What are we dressing you for today?")
+  personality         String   @default("Warm, confident, fashion-aware, friendly, intelligent, conversational, slightly playful, sophisticated. Never pushy, never robotic.")
+  recommendedOccasions Json    @default("[]")
+  priceRangeMin       Decimal? @db.Decimal(10, 2)
+  priceRangeMax       Decimal? @db.Decimal(10, 2)
+  featuredProductIds  Json     @default("[]")
+  excludedProductIds  Json     @default("[]")
+  updatedAt           DateTime @updatedAt
+}
+
+model ArewaEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  eventType String
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
 enum PaymentStatus {
   PENDING
   PAID

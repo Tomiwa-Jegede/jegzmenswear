@@ -20,6 +20,7 @@ const flutterwaveRouter = require("./routes/flutterwave");
 const subscribersRouter = require("./routes/subscribers");
 const discountCodesRouter = require("./routes/discountCodes");
 const campaignsRouter = require("./routes/campaigns");
+const arewaRouter = require("./routes/arewa");
 
 const app = express();
 
@@ -59,7 +60,7 @@ const corsOptions =
       };
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
 
 app.get("/api/health", (req, res) => {
@@ -79,6 +80,7 @@ app.use("/api/flutterwave", flutterwaveRouter);
 app.use("/api/subscribers", subscribersRouter);
 app.use("/api/discount-codes", discountCodesRouter);
 app.use("/api/campaigns", campaignsRouter);
+app.use("/api/arewa", arewaRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

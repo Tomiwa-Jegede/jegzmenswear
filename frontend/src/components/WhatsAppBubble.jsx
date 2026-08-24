@@ -4,13 +4,30 @@ function WhatsAppBubble() {
 
   return (
     <a
+          
       href={`https://wa.me/${number}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
-      className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] shadow-lg hover:scale-105 transition-transform"
+      className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-[#3FF089] to-[#159C4A] ring-1 ring-black/10 hover:scale-105 transition-transform"
+      style={{
+        boxShadow:
+          "inset -3px -6px 10px rgba(0,40,15,0.45), inset 3px 4px 6px rgba(255,255,255,0.55), 0 10px 20px rgba(0,0,0,0.28), 0 3px 6px rgba(0,0,0,0.18)",
+      }}
     >
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg">
+      <span
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          top: "12%",
+          left: "18%",
+          width: "38%",
+          height: "28%",
+          background:
+            "radial-gradient(ellipse at center, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.15) 60%, rgba(255,255,255,0) 100%)",
+          filter: "blur(1px)",
+        }}
+      />
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg" className="relative drop-shadow-sm">
         <path d="M16.001 3C9.373 3 4 8.373 4 15c0 2.362.687 4.564 1.872 6.418L4 29l7.771-1.837A11.94 11.94 0 0016 27c6.627 0 12-5.373 12-12S22.628 3 16.001 3zm0 21.6c-1.98 0-3.83-.55-5.41-1.505l-.388-.23-4.61 1.09 1.114-4.49-.253-.4A9.573 9.573 0 016.4 15c0-5.303 4.298-9.6 9.601-9.6 5.303 0 9.6 4.297 9.6 9.6 0 5.302-4.297 9.6-9.6 9.6zm5.271-7.19c-.288-.144-1.706-.842-1.97-.938-.264-.096-.456-.144-.648.144-.192.288-.744.938-.912 1.13-.168.192-.336.216-.624.072-.288-.144-1.216-.448-2.316-1.428-.856-.763-1.434-1.706-1.602-1.994-.168-.288-.018-.444.126-.588.13-.129.288-.336.432-.504.144-.168.192-.288.288-.48.096-.192.048-.36-.024-.504-.072-.144-.648-1.562-.888-2.14-.234-.562-.472-.486-.648-.495l-.552-.01c-.192 0-.504.072-.768.36-.264.288-1.008.984-1.008 2.4 0 1.416 1.032 2.784 1.176 2.976.144.192 2.03 3.098 4.92 4.344.688.297 1.224.474 1.642.607.69.22 1.318.189 1.814.115.554-.083 1.706-.697 1.946-1.37.24-.672.24-1.248.168-1.37-.072-.12-.264-.192-.552-.336z"/>
       </svg>
     </a>

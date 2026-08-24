@@ -44,3 +44,7 @@ body {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+@keyframes sparkle-pulse {
+  0%, 100% { transform: scale(0.6); opacity: 0.3; }
+  50% { transform: scale(1); opacity: 1; }
+}

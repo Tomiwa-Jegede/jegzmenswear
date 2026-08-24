@@ -10,6 +10,7 @@ import EmailCapture from "../components/EmailCapture";
 import CartDrawer from "../components/CartDrawer";
 import WhatsAppBubble from "../components/WhatsAppBubble";
 import DiscountBadge from "../components/DiscountBadge";
+import ArewaWidget from "../components/ArewaWidget";
 import MobileNav from "../components/MobileNav";
 import NewsletterPopup from "../components/NewsletterPopup";
 import { useCart } from "../context/CartContext";
@@ -435,6 +436,7 @@ function MainLayout() {
       <CartDrawer />
       {!showMaintenance && <WhatsAppBubble />}
       {!showMaintenance && <DiscountBadge />}
+      {!showMaintenance && <ArewaWidget />}
       {!showMaintenance && !isAuthenticated && <NewsletterPopup />}
     </div>
   );
