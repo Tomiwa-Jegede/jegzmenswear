@@ -65,4 +65,21 @@ function getCloudinarySignature(req, res, next) {
   }
 }
 
-module.exports = { login, getCloudinarySignature };
+async function getCloudinaryUsage(req, res, next) {
+  try {
+    const usage = await cloudinary.api.usage();
+    // Normalize for frontend: ensure credits always present
+    // Cloudinary returns { plan, last_updated, transformations, bandwidth, storage, credits, ... }
+    // When over quota, API may still succeed; if account disabled, it throws.
+    res.json(usage);
+  } catch (err) {
+    // Cloudinary errors often have err.error.message === "disabled customer" or http_code 401
+    const status = err.http_code || err.status || 503;
+    const message = err.error?.message || err.message || "Could not fetch Cloudinary usage";
+    err.status = status === 401 ? 503 : status;
+    err.message = message;
+    next(err);
+  }
+}
+
+module.exports = { login, getCloudinarySignature, getCloudinaryUsage };
