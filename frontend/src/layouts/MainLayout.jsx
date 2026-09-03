@@ -391,6 +391,14 @@ function MainLayout() {
           )}
         </div>
       </header>
+      {maintenance && isAuthenticated && !showMaintenance && (
+        <div className="fixed top-[64px] sm:top-[72px] left-0 right-0 z-30 bg-ink text-amber-300 text-[11px] sm:text-xs uppercase tracking-[0.2em] text-center py-2 px-6">
+          Maintenance mode is ON — visitors see offline page ·{" "}
+          <Link to="/admin" className="underline underline-offset-2 hover:text-offwhite">
+            Turn off in Admin
+          </Link>
+        </div>
+      )}
       <MobileNav
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
@@ -401,7 +409,11 @@ function MainLayout() {
       />
       {showMaintenance ? (
         <>
-          <main className="flex-1 overflow-hidden h-screen">
+          <div className="fixed top-0 left-0 right-0 z-40 bg-amber-400 text-ink text-[11px] sm:text-xs uppercase tracking-[0.2em] text-center py-2.5 px-6 flex items-center justify-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-ink animate-pulse" aria-hidden="true" />
+            Maintenance mode — store temporarily offline
+          </div>
+          <main className="flex-1 overflow-hidden h-screen pt-8">
             <Hero maintenanceMode />
           </main>
           <footer className="border-t border-ink/10 bg-offwhite px-6 py-8">

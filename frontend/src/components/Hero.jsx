@@ -240,7 +240,7 @@ useEffect(() => {
           {MobileCampaignImage}
           <div className="absolute inset-0 bg-ink/35" />
 
-          {!maintenanceMode && (
+          {!maintenanceMode ? (
             <div
               className="absolute inset-x-0 z-[3] flex items-center justify-center"
               style={{
@@ -253,6 +253,20 @@ useEffect(() => {
               >
                 Shop
               </Link>
+            </div>
+          ) : (
+            <div
+              className="absolute inset-x-0 z-[3] flex flex-col items-center justify-center gap-3 px-6"
+              style={{
+                bottom: "calc(max(22%, env(safe-area-inset-bottom) + 6.5rem))",
+              }}
+            >
+              <p className="bg-offwhite/90 backdrop-blur text-ink text-[11px] sm:text-xs uppercase tracking-[0.2em] px-4 py-2 rounded-full">
+                Maintenance mode
+              </p>
+              <p className="text-offwhite text-xs sm:text-sm text-center [text-shadow:0_1px_3px_rgba(0,0,0,0.6)] max-w-xs">
+                We&apos;re polishing the collection — back shortly.
+              </p>
             </div>
           )}
 
@@ -292,9 +306,8 @@ useEffect(() => {
             data-hero-action
             className="relative flex w-[38%] flex-col items-start gap-10 px-16 pt-[calc(var(--nav-height,89px)+4rem)]"
           >
-            {!maintenanceMode && (
+            {!maintenanceMode ? (
               <>
-              
                 <Link
                   to="/shop"
                   className="group relative inline-flex w-full max-w-[260px] items-center justify-between overflow-hidden border border-ink px-8 py-5 text-sm uppercase tracking-[0.25em] text-ink"
@@ -308,6 +321,11 @@ useEffect(() => {
                   <span className="absolute inset-0 -translate-x-full bg-ink transition-transform duration-500 ease-out group-hover:translate-x-0" />
                 </Link>
               </>
+            ) : (
+              <div className="w-full max-w-[260px] border border-ink/20 bg-cream px-6 py-5">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-ink/60 mb-2">Maintenance mode</p>
+                <p className="text-sm text-ink leading-relaxed">Store temporarily offline — we&apos;ll be back shortly.</p>
+              </div>
             )}
           </div>
         </div>
