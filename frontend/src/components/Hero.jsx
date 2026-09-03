@@ -143,7 +143,7 @@ useEffect(() => {
   const DesktopCampaignImage = (
     <>
       <div className="absolute inset-0 bg-ink/10" />
-      {currentImage && (
+      {currentImage ? (
         <AnimatePresence mode="sync" initial={false} custom={direction}>
           <motion.div
             key={currentImage.url}
@@ -165,6 +165,14 @@ useEffect(() => {
             />
           </motion.div>
         </AnimatePresence>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-cream border border-ink/10 overflow-hidden">
+          <img
+            src="/jegz-black-logo.png"
+            alt="Jegzmenswear"
+            className="w-24 h-24 sm:w-28 sm:h-28 object-contain opacity-20"
+          />
+        </div>
       )}
     </>
   );
@@ -192,7 +200,9 @@ useEffect(() => {
       </motion.div>
     </AnimatePresence>
   ) : (
-    <div className="absolute inset-0 animate-pulse bg-ink/10" />
+    <div className="absolute inset-0 flex items-center justify-center bg-cream overflow-hidden">
+      <img src="/jegz-black-logo.png" alt="Jegzmenswear" className="w-20 h-20 object-contain opacity-20" />
+    </div>
   );
 
   return (

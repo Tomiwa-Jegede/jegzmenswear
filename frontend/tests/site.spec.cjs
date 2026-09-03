@@ -26,7 +26,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const BASE_URL = process.env.BASE_URL || 'https://jegzmenswear.store';
+const BASE_URL = process.env.BASE_URL || '';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const hasAdminCreds = Boolean(ADMIN_USERNAME && ADMIN_PASSWORD);
@@ -37,7 +37,7 @@ function randomTestEmail() {
 
 test.describe('Public site', () => {
   test('homepage loads with logo, nav, and hero', async ({ page }) => {
-    await page.goto(BASE_URL);
+    await page.goto(`${BASE_URL}/`);
     await expect(page.locator('img[alt="Jegzmenswear"]')).toBeVisible();
     await expect(page.getByRole('link', { name: /shop/i }).first()).toBeVisible();
   });
@@ -117,7 +117,7 @@ test.describe('Public site', () => {
   });
 
   test('newsletter popup can be triggered manually', async ({ page }) => {
-    await page.goto(BASE_URL);
+    await page.goto(`${BASE_URL}/`);
     // Clear any prior dismissal so the popup is eligible to show
     await page.evaluate(() => localStorage.removeItem('onfleek_newsletter_popup_dismissed'));
     // Simulate exit intent by dispatching the real mouseleave event the app listens for
@@ -128,7 +128,7 @@ test.describe('Public site', () => {
   });
 
   test('WhatsApp contact bubble is present', async ({ page }) => {
-    await page.goto(BASE_URL);
+    await page.goto(`${BASE_URL}/`);
     const whatsapp = page.locator('a[href*="wa.me"], a[href*="whatsapp"]');
     await expect(whatsapp.first()).toBeVisible();
   });

@@ -29,6 +29,7 @@ function formatPrice(price) {
 function RugbyPoloSpotlight() {
   const [collection, setCollection] = useState(null);
   const [content, setContent] = useState(DEFAULTS);
+  const [loadFailed, setLoadFailed] = useState(false);
   const reduceMotion = useReducedMotion();
   const sectionRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });

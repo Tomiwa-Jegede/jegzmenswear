@@ -1,13 +1,30 @@
 import api from "./axios";
 
-// Injects Cloudinary delivery transforms (auto format, auto quality, capped width)
-// into an existing secure_url without needing to change how URLs are stored.
+// Allowlist to keep Cloudinary credits under Free 25 quota.
+// Before: 9 distinct widths (150,300,400,500,700,800,900,1000,1600) → 9 transforms per image.
+// After: only 2 distinct widths (400,800) + q_auto:eco → ~75% fewer transformations & bandwidth.
+// 400 = grid/thumbnail, 800 = hero/detail. Any requested width is bucketed.
+const ALLOWED_WIDTHS = [400, 800];
+
+function bucketWidth(requested) {
+  if (!requested) return null;
+  if (requested <= 400) return 400;
+  return 800;
+}
+
+// Injects Cloudinary delivery transforms (auto format, eco quality, capped width)
+// Idempotent: strips any existing transform segment to avoid double-injection.
 export function optimizedImageUrl(url, width) {
   if (!url || !url.includes("/upload/")) return url;
-  const transforms = width
-    ? `f_auto,q_auto,w_${width}`
-    : "f_auto,q_auto";
-  return url.replace("/upload/", `/upload/${transforms}/`);
+  const stripped = url.replace(/\/upload\/[^/]*\/v/, "/upload/v");
+  const b = bucketWidth(width);
+  const transforms = b ? `f_auto,q_auto:eco,w_${b}` : "f_auto,q_auto:eco";
+  return stripped.replace("/upload/", `/upload/${transforms}/`);
+}
+
+export function getOriginalCloudinaryUrl(url) {
+  if (!url || !url.includes("/upload/")) return url;
+  return url.replace(/\/upload\/[^/]*\/v/, "/upload/v");
 }
 
 export async function uploadImageToCloudinary(file) {

@@ -17,7 +17,9 @@ async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 5000) {
 
 function optimizedUrl(url, width) {
   if (!url || !url.includes("/upload/")) return url;
-  return url.replace("/upload/", `/upload/f_auto,q_auto,w_${width}/`);
+  const stripped = url.replace(/\/upload\/[^/]*\/v/, "/upload/v");
+  const b = width <= 400 ? 400 : 800;
+  return stripped.replace("/upload/", `/upload/f_auto,q_auto:eco,w_${b}/`);
 }
 
 async function injectHeroPreload() {
@@ -31,7 +33,7 @@ async function injectHeroPreload() {
   }
 
   const firstImage = images[0];
-  const preloadUrl = optimizedUrl(firstImage.url, 1600);
+  const preloadUrl = optimizedUrl(firstImage.url, 800);
 
   const htmlPath = path.join(__dirname, "..", "dist", "index.html");
   let html = fs.readFileSync(htmlPath, "utf8");

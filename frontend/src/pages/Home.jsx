@@ -29,10 +29,10 @@ function Home() {
         <link rel="canonical" href="https://jegzmenswear.store/" />
       </Helmet>
       <Hero />
-      {/* <FeaturedCollections collections={collections} /> */}
-      {/* <RugbyPoloSpotlight /> */}
-      {/* <CampaignEditorial /> */}
-      {/* <BrandPhilosophy /> */}
+      <FeaturedCollections collections={collections} />
+      <RugbyPoloSpotlight />
+      <CampaignEditorial />
+      <BrandPhilosophy />
     </>
   );
 }
